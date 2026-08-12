@@ -1,0 +1,9 @@
+{
+  "name": "dor-gatekeeper",
+  "private": true,
+  "type": "module",
+  "description": "Enterprise Governance & Responsible AI DoR Gatekeeper — static, serverless assessment SPA.",
+  "scripts": {
+    "test": "node tests/run.js"
+  }
+}

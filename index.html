@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DoR Gatekeeper</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-top">
+      <h1>DoR Gatekeeper</h1>
+      <p class="tagline">Definition of Ready gate for features, AI integrations, and architecture change requests.</p>
+    </div>
+
+    <div class="header-controls">
+      <div class="field">
+        <label for="feature-name">Feature / story name</label>
+        <input type="text" id="feature-name" placeholder="e.g. Customer support chatbot v2" />
+      </div>
+
+      <div class="field">
+        <label for="sample-select">Or load a sample assessment</label>
+        <select id="sample-select"></select>
+      </div>
+
+      <div class="meta">
+        <span>Assessment ID: <code id="assessment-id"></code></span>
+        <span>Date: <span id="assessment-date"></span></span>
+      </div>
+
+      <button id="reset-btn" type="button" class="secondary">Reset</button>
+    </div>
+  </header>
+
+  <div id="errors" class="errors-region" role="alert"></div>
+
+  <main class="app-main">
+    <div id="checklist" class="checklist"></div>
+
+    <aside class="results-panel">
+      <div class="gate-badge-wrap">
+        <span id="gate-badge" class="gate-badge"></span>
+      </div>
+
+      <div id="score-panel" class="score-panel"></div>
+
+      <h2>Gap Analysis Breakdown</h2>
+      <ul id="gap-list" class="gap-list"></ul>
+
+      <h2>Architecture Action Items</h2>
+      <div id="action-items" class="action-items"></div>
+
+      <div class="export-buttons">
+        <button id="export-json-btn" type="button" disabled>Export JSON</button>
+        <button id="export-md-btn" type="button" disabled>Export Markdown</button>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="app-footer">
+    <p>Companion tool: <a href="https://github.com/pribalky/dor-recovery-console">dor-recovery-console</a> (Delivery Recovery &amp; Governance Console) — ingests this app's JSON export.</p>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
