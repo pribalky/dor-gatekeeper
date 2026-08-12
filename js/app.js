@@ -116,13 +116,13 @@ function init() {
   els.exportJsonBtn.addEventListener("click", () => {
     const { scoreResult, gaps } = recompute();
     const data = buildJsonExport(state, scoreResult, gaps);
-    downloadFile(exportFilenameJson(state.assessment_id), JSON.stringify(data, null, 2), "application/json");
+    downloadFile(exportFilenameJson(state.feature_name, state.assessment_id), JSON.stringify(data, null, 2), "application/json");
   });
 
   els.exportMdBtn.addEventListener("click", () => {
     const { scoreResult, gaps } = recompute();
     const md = buildMarkdownExport(state, scoreResult, gaps);
-    downloadFile(exportFilenameMd(state.assessment_id), md, "text/markdown");
+    downloadFile(exportFilenameMd(state.feature_name, state.assessment_id), md, "text/markdown");
   });
 
   recompute();

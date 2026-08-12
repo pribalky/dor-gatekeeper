@@ -153,3 +153,13 @@ This file is cross-referenced from both repos (`dor-gatekeeper` and `dor-recover
 **Why:** Scoring and export logic are pure functions over plain JS objects — trivial to assert without a framework's fixtures, mocks, or watch-mode machinery. Using a real framework would mean an `npm install` step this project otherwise has no reason to have, breaking the "clone and go, forever" pitch of the rest of the stack.
 
 **Trade-off:** No test-framework conveniences (parallel runs, snapshot testing, rich diffs) — acceptable at this test volume (~40 assertions across 2 files).
+
+---
+
+## 16. Download filenames lead with the feature name, not just `assessment_id`
+
+**Decision:** Exported files are named `{slugified-feature-name}_{assessment_id}_dor_export.{json|md}`, not the PRD's literal `{assessment_id}_dor_export.json`. `assessment_id` stays in the filename (and remains the field App 2 keys off inside the JSON) — only the on-disk name changes.
+
+**Why:** A UUID-first filename is unreadable in a downloads folder — a user running several assessments can't tell them apart without opening each one. Leading with the feature name makes files self-describing and sortable by name, while keeping `assessment_id` in the name (and unchanged inside the JSON payload) preserves the stable identifier App 2 depends on.
+
+**Trade-off:** A deliberate, minor deviation from the PRD's literal filename pattern — noted here so it reads as an intentional usability call, not drift. The JSON schema itself (§4) is unaffected; only the filename format changed.

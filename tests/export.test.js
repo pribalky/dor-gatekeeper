@@ -1,8 +1,8 @@
 import { assertEqual, assertTrue } from "./assert.js";
 import { scoreAssessment } from "../js/engine/scoring.js";
 import { deriveGaps } from "../js/engine/gaps.js";
-import { buildJsonExport, SCHEMA_VERSION } from "../js/export/jsonExport.js";
-import { buildMarkdownExport } from "../js/export/markdownExport.js";
+import { buildJsonExport, SCHEMA_VERSION, exportFilenameJson, slugify } from "../js/export/jsonExport.js";
+import { buildMarkdownExport, exportFilenameMd } from "../js/export/markdownExport.js";
 import { PILLARS, SAMPLES } from "../js/config/criteria.js";
 
 function makeState(sample) {
@@ -58,3 +58,18 @@ assertTrue(md.includes(state.feature_name), "markdown export includes the featur
 assertTrue(md.includes(scoreResult.gateDecision), "markdown export includes the gate decision");
 assertTrue(md.includes("Gap Analysis Breakdown"), "markdown export includes the gap analysis section");
 assertTrue(md.includes("Architecture Action Items"), "markdown export includes the action items section");
+
+// Download filenames lead with the feature name so files are recognizable in a
+// downloads folder, and still carry the assessment_id for stable tracking.
+assertEqual(slugify("Customer Support Chatbot v2!"), "customer-support-chatbot-v2", "slugify lowercases and hyphenates");
+assertEqual(slugify(""), "untitled", "slugify falls back to 'untitled' for an empty name");
+assertEqual(
+  exportFilenameJson("Customer Support Chatbot", "abc-123"),
+  "customer-support-chatbot_abc-123_dor_export.json",
+  "JSON filename leads with the slugified feature name, then assessment_id"
+);
+assertEqual(
+  exportFilenameMd("Customer Support Chatbot", "abc-123"),
+  "customer-support-chatbot_abc-123_dor_export.md",
+  "Markdown filename leads with the slugified feature name, then assessment_id"
+);

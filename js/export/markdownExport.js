@@ -1,4 +1,4 @@
-import { round2 } from "./jsonExport.js";
+import { round2, slugify } from "./jsonExport.js";
 
 export function buildMarkdownExport(state, scoreResult, gaps) {
   const lines = [];
@@ -44,6 +44,6 @@ export function buildMarkdownExport(state, scoreResult, gaps) {
   return lines.join("\n");
 }
 
-export function exportFilenameMd(assessmentId) {
-  return `${assessmentId}_dor_export.md`;
+export function exportFilenameMd(featureName, assessmentId) {
+  return `${slugify(featureName)}_${assessmentId}_dor_export.md`;
 }

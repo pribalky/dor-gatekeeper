@@ -1,5 +1,7 @@
 # DoR Gatekeeper
 
+**🔗 Live app: [pribalky.github.io/dor-gatekeeper](https://pribalky.github.io/dor-gatekeeper/)**
+
 An interactive, lightweight Definition of Ready (DoR) gate for feature initiatives, AI integrations, and architecture change requests — evaluated across 5 governance pillars before sprint commitment.
 
 Fully static. No backend, no build step, no npm install. Runs entirely in the browser and deploys straight to GitHub Pages.
@@ -102,7 +104,7 @@ No build step, so no Actions workflow is required:
 
 ## Data Contract (App 2 Handoff)
 
-"Export JSON" produces `{assessment_id}_dor_export.json`, matching the schema App 2 ingests: `schema_version`, `assessment_id`, `assessment_date`, `feature_name`, `overall_score`, `gate_decision`, and `pillars[]` (each with `pillar_name`, `pillar_score`, and `gaps[]` carrying `gap_id`, `description`, `severity_gov`, `category_tag`, and `category_tag_freetext` when `category_tag` is `"Other"`). See `DECISIONS.md` for why this is a versioned file export rather than a shared database or live API.
+"Export JSON" produces `{feature-name-slug}_{assessment_id}_dor_export.json` — the feature name leads so files stay recognizable in a downloads folder, with `assessment_id` kept in the name for stable tracking (see `DECISIONS.md` #16). The file content matches the schema App 2 ingests: `schema_version`, `assessment_id`, `assessment_date`, `feature_name`, `overall_score`, `gate_decision`, and `pillars[]` (each with `pillar_name`, `pillar_score`, and `gaps[]` carrying `gap_id`, `description`, `severity_gov`, `category_tag`, and `category_tag_freetext` when `category_tag` is `"Other"`). See `DECISIONS.md` for why this is a versioned file export rather than a shared database or live API.
 
 ## Out of Scope
 

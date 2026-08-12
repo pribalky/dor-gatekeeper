@@ -6,6 +6,16 @@ export function round2(n) {
   return Math.round(n * 100) / 100;
 }
 
+// Turns a feature name into a filesystem-safe, human-scannable slug for filenames.
+export function slugify(text) {
+  const slug = (text || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+  return slug || "untitled";
+}
+
 // Builds the App 2 handoff contract exactly per PRD §4: only gap_id, description,
 // severity_gov, category_tag (+ category_tag_freetext when Other) cross the boundary —
 // internal fields like `remediation` and `answer` are App 1 UI concerns and stay behind.
@@ -38,6 +48,8 @@ export function buildJsonExport(state, scoreResult, gaps) {
   };
 }
 
-export function exportFilenameJson(assessmentId) {
-  return `${assessmentId}_dor_export.json`;
+// Feature name first (what a user recognizes in a downloads folder), assessment_id
+// second (the stable identifier App 2 keys off) — see DECISIONS.md #16.
+export function exportFilenameJson(featureName, assessmentId) {
+  return `${slugify(featureName)}_${assessmentId}_dor_export.json`;
 }
