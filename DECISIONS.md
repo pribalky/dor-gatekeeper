@@ -163,3 +163,43 @@ This file is cross-referenced from both repos (`dor-gatekeeper` and `dor-recover
 **Why:** A UUID-first filename is unreadable in a downloads folder — a user running several assessments can't tell them apart without opening each one. Leading with the feature name makes files self-describing and sortable by name, while keeping `assessment_id` in the name (and unchanged inside the JSON payload) preserves the stable identifier App 2 depends on.
 
 **Trade-off:** A deliberate, minor deviation from the PRD's literal filename pattern — noted here so it reads as an intentional usability call, not drift. The JSON schema itself (§4) is unaffected; only the filename format changed.
+
+---
+
+## 17. Pillar taxonomy reframed to 5 general transformation pillars — free, schema-wise
+
+**Decision:** The original 5 software/AI-specific pillars (Architectural & Data Lineage Feasibility, Responsible AI & Safety Assurance, Data Governance & Regulatory Compliance, Operational Readiness & Resilience, Definition of Ready Completeness) were replaced with 5 general transformation pillars (People & Capability, Process & Workflow, Data & Integration, Technology & Infrastructure, Governance & Compliance), used identically across every framework/sector preset (`js/config/criteria.js`, `FRAMEWORKS`).
+
+**Why:** `pillar_name` has never been hardcoded in App 2 — it's just a display string App 2 renders from whatever arrives in the JSON. Broadening the pillar taxonomy to something that fits a general Target Operating Model assessment (not just a software feature check) costs **zero schema or App 2 changes**; only the content authored under `js/config/criteria.js` changed. This is what made the sector-preset feature (#19) tractable without touching the core scoring/export engine at all.
+
+**Trade-off:** The baseline preset dropped 2 narrowly AI-specific items (output determinism, model drift monitoring) that didn't have an honest home in the new taxonomy, replacing them with 2 new People & Capability items (team training/role readiness, RACI/ownership) to keep every pillar at 5 items. A small, deliberate content loss in exchange for a taxonomy that generalizes.
+
+---
+
+## 18. `category_tag` enum extended (schema_version 1.1) rather than force-fit onto the original 8 tags
+
+**Decision:** 3 new category_tag values — `Safety`, `AssetLifecycle`, `SupplyChain` — were added for the Water and Energy sector presets, which need physical/regulated-sector risk themes the original enum (PII/Fallback/RateLimit/Consent/HITL/Lineage/NFR/Other) doesn't honestly cover. Exports using them carry `schema_version: "1.1"`; the baseline preset (which uses only the original 8 tags) still exports `"1.0"`.
+
+**Why:** This PRD explicitly anticipates this: *"This schema/enum is also designed to be extended by other pods without rebuilding the scoring engine — supports reuse across teams/accounts, not just this single build"* (§7). Force-fitting a water-safety-case gap into `PII` just because its cost driver text happens to superficially fit would be semantically dishonest and would undermine App 2's auto-costing quality for those sectors. Extending the enum — additively, with a versioned bump — is the mechanism the schema was designed to support, not a workaround.
+
+**Trade-off:** App 2 must recognize the new tags and carry cost-model entries for them, and must accept both `"1.0"` and `"1.1"` on ingestion (see `dor-recovery-console`'s `DECISIONS.md`). This is coordinated, cross-repo change — the cost of the loose-coupling architecture (#2) actually evolving, not just staying static.
+
+---
+
+## 19. Sector presets ("frameworks") are a selectable config, not separate apps or forks
+
+**Decision:** `js/config/criteria.js` exports `FRAMEWORKS`, an array of `{ id, label, schemaVersion, pillars, samples }`. A dropdown in the UI (`js/app.js`, `switchFramework()`) swaps the active framework; the scoring engine, gap derivation, export, and validation modules were changed from importing a fixed `PILLARS` constant to accepting `pillars` as a parameter, so they work identically regardless of which framework is active.
+
+**Why:** Financial Services (baseline), Water Asset Transformation, and Energy Grid Operating Model are different *content*, not different *mechanics* — same 5-pillar shape, same Yes/Partial/No scoring, same gate thresholds, same export contract. Modeling this as one app with a content selector (rather than 3 forked apps, or 3 hardcoded modes) means a 4th sector is a config addition, not a new codebase.
+
+**Trade-off:** Switching frameworks mid-assessment clears answers (item IDs aren't compatible across presets with different content) — acceptable since frameworks represent fundamentally different assessments, not variations on the same one.
+
+---
+
+## 20. Sample-assessment depth is asymmetric across presets
+
+**Decision:** The baseline preset keeps its full 4-tier Best/Good/Intentionally-Off/Very-Bad samples. Water and Energy each get 1 representative "Good" sample.
+
+**Why:** All 4 tiers exist for baseline because it's the primary, most-exercised path; hand-crafting 25-answer combinations that land cleanly in each of 4 gate bands for 2 more sectors would be disproportionate effort for a delta whose main point is proving the framework-switching mechanism and the extended enum actually work end to end — which 1 sample per sector already does, and does provably (asserted in `tests/scoring.test.js`, same pattern as baseline).
+
+**Trade-off:** Water/Energy don't have a demonstrated CONDITIONAL or BLOCKED example yet. Noted as a fast-follow if either preset sees real use.

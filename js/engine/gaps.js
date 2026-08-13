@@ -1,10 +1,8 @@
-import { PILLARS } from "../config/criteria.js";
-
 // One gap per non-"yes" checklist item. gap_id is derived from the stable item id
 // (not a running counter) so it never shifts between recomputes of the same assessment.
-export function deriveGaps(answers) {
+export function deriveGaps(pillars, answers) {
   const gaps = [];
-  for (const pillar of PILLARS) {
+  for (const pillar of pillars) {
     for (const item of pillar.items) {
       const answer = answers[item.id];
       if (answer === "yes") continue;

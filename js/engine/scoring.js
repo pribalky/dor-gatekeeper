@@ -1,4 +1,4 @@
-import { PILLARS, ANSWER_POINTS, GATE_THRESHOLDS } from "../config/criteria.js";
+import { ANSWER_POINTS, GATE_THRESHOLDS } from "../config/criteria.js";
 
 export function computePillarScore(pillar, answers) {
   const maxPoints = pillar.items.length * ANSWER_POINTS.yes;
@@ -8,8 +8,8 @@ export function computePillarScore(pillar, answers) {
   return (earned / maxPoints) * 100;
 }
 
-export function computePillarScores(answers) {
-  return PILLARS.map((pillar) => ({
+export function computePillarScores(pillars, answers) {
+  return pillars.map((pillar) => ({
     id: pillar.id,
     name: pillar.name,
     weight: pillar.weight,
@@ -27,8 +27,8 @@ export function gateDecision(overallScore) {
   return "BLOCKED";
 }
 
-export function scoreAssessment(answers) {
-  const pillarScores = computePillarScores(answers);
+export function scoreAssessment(pillars, answers) {
+  const pillarScores = computePillarScores(pillars, answers);
   const overallScore = computeOverallScore(pillarScores);
   return { pillarScores, overallScore, gateDecision: gateDecision(overallScore) };
 }

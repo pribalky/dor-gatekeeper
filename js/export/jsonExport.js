@@ -1,7 +1,3 @@
-import { PILLARS } from "../config/criteria.js";
-
-export const SCHEMA_VERSION = "1.0";
-
 export function round2(n) {
   return Math.round(n * 100) / 100;
 }
@@ -19,8 +15,11 @@ export function slugify(text) {
 // Builds the App 2 handoff contract exactly per PRD §4: only gap_id, description,
 // severity_gov, category_tag (+ category_tag_freetext when Other) cross the boundary —
 // internal fields like `remediation` and `answer` are App 1 UI concerns and stay behind.
-export function buildJsonExport(state, scoreResult, gaps) {
-  const pillars = PILLARS.map((pillar, idx) => ({
+// `schemaVersion` is per-framework: "1.0" for the baseline (existing category_tag
+// enum only), "1.1" for presets that use the extended enum (Safety/AssetLifecycle/
+// SupplyChain) — see DECISIONS.md.
+export function buildJsonExport(pillars, schemaVersion, state, scoreResult, gaps) {
+  const exportPillars = pillars.map((pillar, idx) => ({
     pillar_name: pillar.name,
     pillar_score: round2(scoreResult.pillarScores[idx].score),
     gaps: gaps
@@ -38,13 +37,13 @@ export function buildJsonExport(state, scoreResult, gaps) {
   }));
 
   return {
-    schema_version: SCHEMA_VERSION,
+    schema_version: schemaVersion,
     assessment_id: state.assessment_id,
     assessment_date: state.assessment_date,
     feature_name: state.feature_name,
     overall_score: round2(scoreResult.overallScore),
     gate_decision: scoreResult.gateDecision,
-    pillars,
+    pillars: exportPillars,
   };
 }
 

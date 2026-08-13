@@ -1,10 +1,10 @@
-import { PILLARS } from "../config/criteria.js";
-
 const ANSWER_LABELS = { yes: "Yes", partial: "Partial", no: "No" };
 
-export function renderChecklist(container, onChange) {
+// The change listener is bound once by the caller (app.js), not here — calling this
+// again on framework switch must not stack duplicate listeners on the container.
+export function renderChecklist(pillars, container) {
   container.innerHTML = "";
-  for (const pillar of PILLARS) {
+  for (const pillar of pillars) {
     const section = document.createElement("section");
     section.className = "pillar";
 
@@ -38,12 +38,15 @@ export function renderChecklist(container, onChange) {
     section.appendChild(list);
     container.appendChild(section);
   }
+}
 
-  container.addEventListener("change", (event) => {
+// Bind once from app.js via container.addEventListener("change", onRadioChange(handler)).
+export function onRadioChange(handler) {
+  return (event) => {
     if (event.target.matches('input[type="radio"]')) {
-      onChange(event.target.name, event.target.value);
+      handler(event.target.name, event.target.value);
     }
-  });
+  };
 }
 
 export function setAnswers(container, answers) {

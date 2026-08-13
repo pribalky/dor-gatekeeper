@@ -1,9 +1,9 @@
 import { assertEqual, assertTrue } from "./assert.js";
 import { scoreAssessment } from "../js/engine/scoring.js";
 import { deriveGaps } from "../js/engine/gaps.js";
-import { buildJsonExport, SCHEMA_VERSION, exportFilenameJson, slugify } from "../js/export/jsonExport.js";
+import { buildJsonExport, exportFilenameJson, slugify } from "../js/export/jsonExport.js";
 import { buildMarkdownExport, exportFilenameMd } from "../js/export/markdownExport.js";
-import { PILLARS, SAMPLES } from "../js/config/criteria.js";
+import { FRAMEWORKS } from "../js/config/criteria.js";
 
 function makeState(sample) {
   return {
@@ -14,20 +14,21 @@ function makeState(sample) {
   };
 }
 
-const borderline = SAMPLES.find((s) => s.id === "intentionally_off");
+const baseline = FRAMEWORKS.find((f) => f.id === "baseline");
+const borderline = baseline.samples.find((s) => s.id === "intentionally_off");
 const state = makeState(borderline);
-const scoreResult = scoreAssessment(state.answers);
-const gaps = deriveGaps(state.answers);
-const json = buildJsonExport(state, scoreResult, gaps);
+const scoreResult = scoreAssessment(baseline.pillars, state.answers);
+const gaps = deriveGaps(baseline.pillars, state.answers);
+const json = buildJsonExport(baseline.pillars, baseline.schemaVersion, state, scoreResult, gaps);
 
-assertEqual(json.schema_version, SCHEMA_VERSION, "export carries schema_version 1.0");
+assertEqual(json.schema_version, "1.0", "baseline export carries schema_version 1.0");
 assertEqual(json.assessment_id, state.assessment_id, "export carries assessment_id");
 assertEqual(json.feature_name, state.feature_name, "export carries feature_name");
 assertTrue(
   ["APPROVED", "CONDITIONAL", "BLOCKED"].includes(json.gate_decision),
   "gate_decision is a valid enum value"
 );
-assertEqual(json.pillars.length, PILLARS.length, "export has one entry per pillar");
+assertEqual(json.pillars.length, baseline.pillars.length, "export has one entry per pillar");
 
 const allExportedGaps = json.pillars.flatMap((p) => p.gaps);
 assertTrue(allExportedGaps.length > 0, "the borderline sample produces at least one gap");
@@ -44,11 +45,11 @@ const gapIds = allExportedGaps.map((g) => g.gap_id);
 assertEqual(new Set(gapIds).size, gapIds.length, "all gap_id values are unique within the export");
 
 // A fully "yes" assessment exports zero gaps across every pillar.
-const bestSample = SAMPLES.find((s) => s.id === "best");
+const bestSample = baseline.samples.find((s) => s.id === "best");
 const bestState = makeState(bestSample);
-const bestScore = scoreAssessment(bestState.answers);
-const bestGaps = deriveGaps(bestState.answers);
-const bestJson = buildJsonExport(bestState, bestScore, bestGaps);
+const bestScore = scoreAssessment(baseline.pillars, bestState.answers);
+const bestGaps = deriveGaps(baseline.pillars, bestState.answers);
+const bestJson = buildJsonExport(baseline.pillars, baseline.schemaVersion, bestState, bestScore, bestGaps);
 const bestExportedGaps = bestJson.pillars.flatMap((p) => p.gaps);
 assertEqual(bestExportedGaps.length, 0, "the fully-ready sample exports zero gaps");
 assertEqual(bestJson.gate_decision, "APPROVED", "the fully-ready sample exports gate_decision APPROVED");
@@ -73,3 +74,20 @@ assertEqual(
   "customer-support-chatbot_abc-123_dor_export.md",
   "Markdown filename leads with the slugified feature name, then assessment_id"
 );
+
+// Non-baseline frameworks (Water/Energy) export schema_version 1.1, and actually use
+// the extended category_tag enum — proving it reaches the JSON, not just the config.
+const EXTENDED_TAGS = new Set(["Safety", "AssetLifecycle", "SupplyChain"]);
+
+for (const framework of FRAMEWORKS.filter((f) => f.id !== "baseline")) {
+  const sample = framework.samples[0];
+  const sampleState = makeState(sample);
+  const sampleScore = scoreAssessment(framework.pillars, sampleState.answers);
+  const sampleGaps = deriveGaps(framework.pillars, sampleState.answers);
+  const sampleJson = buildJsonExport(framework.pillars, framework.schemaVersion, sampleState, sampleScore, sampleGaps);
+
+  assertEqual(sampleJson.schema_version, "1.1", `[${framework.id}] export carries schema_version 1.1`);
+
+  const usesExtendedTag = framework.pillars.flatMap((p) => p.items).some((item) => EXTENDED_TAGS.has(item.category_tag));
+  assertTrue(usesExtendedTag, `[${framework.id}] framework definition uses at least one extended category_tag`);
+}
