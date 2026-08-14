@@ -203,3 +203,23 @@ This file is cross-referenced from both repos (`dor-gatekeeper` and `dor-recover
 **Why:** All 4 tiers exist for baseline because it's the primary, most-exercised path; hand-crafting 25-answer combinations that land cleanly in each of 4 gate bands for 2 more sectors would be disproportionate effort for a delta whose main point is proving the framework-switching mechanism and the extended enum actually work end to end — which 1 sample per sector already does, and does provably (asserted in `tests/scoring.test.js`, same pattern as baseline).
 
 **Trade-off:** Water/Energy don't have a demonstrated CONDITIONAL or BLOCKED example yet. Noted as a fast-follow if either preset sees real use.
+
+---
+
+## 21. Framework labels group Water/Energy under a visible "Regulated Infrastructure" umbrella instead of merging them into one preset
+
+**Decision:** The dropdown reads "Regulated Infrastructure — Water Asset Transformation" and "Regulated Infrastructure — Energy Grid Operating Model" as two entries, not one combined "Regulated Infrastructure" preset. Baseline is labeled "Banking / Financial Services (baseline)".
+
+**Why:** A single generic "Infrastructure" preset would have to average over two genuinely different regulatory/operational contexts (water utility vs. grid operator), diluting both. Keeping them separate but visibly grouped by a shared label prefix gets the best of both: the dropdown reads as "3 sector families" for the interview narrative, while each preset stays specific enough to be a credible demonstration rather than a generic stand-in.
+
+**Trade-off:** 4 dropdown entries instead of 3 — a minor UI cost for not diluting either sector's content.
+
+---
+
+## 22. Public Sector preset adds a 4th `category_tag` (`Probity`) via `schema_version` 1.2
+
+**Decision:** The Public Sector framework introduces `Probity` (procurement/conflict-of-interest breach) as a new `category_tag`, on top of the `Safety`/`AssetLifecycle`/`SupplyChain` set added for Water/Energy. Exports using it carry `schema_version: "1.2"` (additive over `"1.1"`, same pattern as before — see `DECISIONS.md` #18).
+
+**Why:** Procurement/probity risk is a distinct, well-understood category in public sector delivery (not a vague one-off), same bar applied to `Safety` for the infrastructure sectors. Two Public-Sector-specific items (FOI/Public Records, Accessibility) still route through `Other` rather than minting more new tags — reserving `Other` for genuinely narrow, less-recurring themes, and reserving a first-class tag for the theme that's central enough to appear twice.
+
+**Trade-off:** This is now the 3rd schema_version bump (1.0 → 1.1 → 1.2), each additive. Confirms the extension mechanism is a repeatable pattern, not a one-off — but each new sector still requires an App 2 cost-model entry to avoid falling through to "Other" (see `dor-recovery-console`'s `DECISIONS.md`).

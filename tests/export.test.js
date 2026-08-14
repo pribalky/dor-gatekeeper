@@ -75,9 +75,11 @@ assertEqual(
   "Markdown filename leads with the slugified feature name, then assessment_id"
 );
 
-// Non-baseline frameworks (Water/Energy) export schema_version 1.1, and actually use
-// the extended category_tag enum — proving it reaches the JSON, not just the config.
-const EXTENDED_TAGS = new Set(["Safety", "AssetLifecycle", "SupplyChain"]);
+// Non-baseline frameworks each export their own declared schema_version, and each
+// actually uses at least one tag beyond the original 8 — proving the extended enum
+// reaches the JSON, not just the config. Water/Energy are 1.1 (Safety/AssetLifecycle/
+// SupplyChain); Public Sector is 1.2 (adds Probity on top of those).
+const ORIGINAL_TAGS = new Set(["PII", "Fallback", "RateLimit", "Consent", "HITL", "Lineage", "NFR", "Other"]);
 
 for (const framework of FRAMEWORKS.filter((f) => f.id !== "baseline")) {
   const sample = framework.samples[0];
@@ -86,8 +88,14 @@ for (const framework of FRAMEWORKS.filter((f) => f.id !== "baseline")) {
   const sampleGaps = deriveGaps(framework.pillars, sampleState.answers);
   const sampleJson = buildJsonExport(framework.pillars, framework.schemaVersion, sampleState, sampleScore, sampleGaps);
 
-  assertEqual(sampleJson.schema_version, "1.1", `[${framework.id}] export carries schema_version 1.1`);
+  assertEqual(sampleJson.schema_version, framework.schemaVersion, `[${framework.id}] export carries its declared schema_version`);
 
-  const usesExtendedTag = framework.pillars.flatMap((p) => p.items).some((item) => EXTENDED_TAGS.has(item.category_tag));
-  assertTrue(usesExtendedTag, `[${framework.id}] framework definition uses at least one extended category_tag`);
+  const usesExtendedTag = framework.pillars.flatMap((p) => p.items).some((item) => !ORIGINAL_TAGS.has(item.category_tag));
+  assertTrue(usesExtendedTag, `[${framework.id}] framework definition uses at least one tag beyond the original 8`);
 }
+
+// Public Sector specifically introduces Probity, distinct from Water/Energy's set.
+const publicSector = FRAMEWORKS.find((f) => f.id === "public-sector");
+assertEqual(publicSector.schemaVersion, "1.2", "Public Sector framework declares schema_version 1.2");
+const usesProbity = publicSector.pillars.flatMap((p) => p.items).some((item) => item.category_tag === "Probity");
+assertTrue(usesProbity, "Public Sector framework uses the Probity category_tag");

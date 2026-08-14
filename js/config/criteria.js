@@ -202,6 +202,85 @@ const ENERGY_PILLARS = [
   },
 ];
 
+// --- Public Sector ------------------------------------------------------------------
+const PUBLIC_SECTOR_PILLARS = [
+  {
+    id: "people-capability",
+    name: "People & Capability",
+    weight: 0.20,
+    items: [
+      { id: "PPL-1", label: "Public service workforce capability mapped against programme needs", severity_gov: "Med", category_tag: "NFR", remediation: "Map current public service workforce capability against what the programme requires." },
+      { id: "PPL-2", label: "Machinery-of-government change impact on roles assessed", severity_gov: "Med", category_tag: "NFR", remediation: "Assess and document the impact of any machinery-of-government change on affected roles." },
+      { id: "PPL-3", label: "Accountable officer sign-off obtained", severity_gov: "High", category_tag: "NFR", remediation: "Obtain explicit sign-off from the accountable officer before proceeding." },
+      { id: "PPL-4", label: "Change management & citizen-facing staff training resourced", severity_gov: "Med", category_tag: "NFR", remediation: "Resource a change management plan covering citizen-facing staff training." },
+      { id: "PPL-5", label: "Knowledge transfer plan for outgoing contractors/consultants", severity_gov: "Low", category_tag: "NFR", remediation: "Document a knowledge-transfer plan ahead of any contractor/consultant off-boarding." },
+    ],
+  },
+  {
+    id: "process-workflow",
+    name: "Process & Workflow",
+    weight: 0.20,
+    items: [
+      { id: "PROC-1", label: "Procurement process complies with public sector procurement rules", severity_gov: "High", category_tag: "Probity", remediation: "Have procurement counsel confirm the process complies with public sector procurement rules before proceeding." },
+      { id: "PROC-2", label: "Business case / budget approval (gateway review) process defined", severity_gov: "High", category_tag: "NFR", remediation: "Define the business case and gateway review process required for budget approval." },
+      { id: "PROC-3", label: "Freedom of Information (FOI) / public records process integrated", severity_gov: "Med", category_tag: "Other", category_tag_freetext: "FOI / Public Records Compliance", remediation: "Integrate FOI / public records handling into the process before go-live." },
+      { id: "PROC-4", label: "Change control process for ministerial-facing systems defined", severity_gov: "Med", category_tag: "NFR", remediation: "Define a change control process for any ministerial-facing system or report." },
+      { id: "PROC-5", label: "Citizen complaints / service feedback process integrated", severity_gov: "Low", category_tag: "NFR", remediation: "Integrate a citizen complaints / service feedback process before launch." },
+    ],
+  },
+  {
+    id: "data-integration",
+    name: "Data & Integration",
+    weight: 0.15,
+    items: [
+      { id: "DATA-1", label: "Cross-department data sharing agreement confirmed", severity_gov: "High", category_tag: "Consent", remediation: "Confirm the cross-department data sharing agreement is in place and current." },
+      { id: "DATA-2", label: "Citizen data privacy & PII safeguards validated", severity_gov: "High", category_tag: "PII", remediation: "Validate PII/privacy safeguards for citizen data on both inputs and outputs." },
+      { id: "DATA-3", label: "Legacy government system integration pattern documented", severity_gov: "Med", category_tag: "Lineage", remediation: "Document the legacy government system integration pattern and have it validated." },
+      { id: "DATA-4", label: "Data quality for public reporting/statistics validated", severity_gov: "Med", category_tag: "Lineage", remediation: "Validate data quality feeding any public reporting or official statistics." },
+      { id: "DATA-5", label: "Audit trail for ministerial/parliamentary reporting confirmed", severity_gov: "Med", category_tag: "Lineage", remediation: "Confirm the audit trail is complete for ministerial/parliamentary reporting obligations." },
+    ],
+  },
+  {
+    id: "technology-infrastructure",
+    name: "Technology & Infrastructure",
+    weight: 0.15,
+    items: [
+      { id: "TECH-1", label: "Accessibility compliance (e.g. WCAG) for citizen-facing services validated", severity_gov: "High", category_tag: "Other", category_tag_freetext: "Accessibility Compliance", remediation: "Validate citizen-facing services against the required accessibility standard (e.g. WCAG)." },
+      { id: "TECH-2", label: "Legacy system interoperability risk assessed", severity_gov: "Med", category_tag: "Lineage", remediation: "Assess and document interoperability risk with legacy government systems." },
+      { id: "TECH-3", label: "Fallback / continuity-of-service plan defined", severity_gov: "High", category_tag: "Fallback", remediation: "Define a fallback / continuity-of-service plan for critical citizen services." },
+      { id: "TECH-4", label: "Capacity planning for peak citizen demand completed", severity_gov: "Med", category_tag: "RateLimit", remediation: "Complete capacity planning for peak citizen demand periods." },
+      { id: "TECH-5", label: "Disaster recovery plan for critical citizen services tested", severity_gov: "High", category_tag: "Fallback", remediation: "Test the disaster recovery plan for critical citizen-facing services." },
+    ],
+  },
+  {
+    id: "governance-compliance",
+    name: "Governance & Compliance",
+    weight: 0.30,
+    items: [
+      { id: "GOV-1", label: "Probity / conflict-of-interest declarations completed", severity_gov: "High", category_tag: "Probity", remediation: "Collect and review probity / conflict-of-interest declarations from all relevant parties." },
+      { id: "GOV-2", label: "Political/ministerial risk assessment documented", severity_gov: "High", category_tag: "NFR", remediation: "Document a political/ministerial risk assessment and route it through the appropriate sign-off." },
+      { id: "GOV-3", label: "Budget & appropriations compliance confirmed", severity_gov: "High", category_tag: "NFR", remediation: "Confirm the programme's spend is compliant with its budget and appropriations authority." },
+      { id: "GOV-4", label: "Public records retention & audit trail confirmed", severity_gov: "Med", category_tag: "Lineage", remediation: "Confirm public records retention and audit-trail completeness for the programme." },
+      { id: "GOV-5", label: "Public/media disclosure and transparency plan defined", severity_gov: "Med", category_tag: "Consent", remediation: "Define a public/media disclosure and transparency plan ahead of launch." },
+    ],
+  },
+];
+
+const PUBLIC_SECTOR_SAMPLES = [
+  {
+    id: "good",
+    label: "Good — minor gaps only",
+    feature_name: "Sample: Citizen Services Digital Uplift",
+    answers: {
+      "PPL-1": "yes", "PPL-2": "yes", "PPL-3": "yes", "PPL-4": "yes", "PPL-5": "partial",
+      "PROC-1": "yes", "PROC-2": "yes", "PROC-3": "yes", "PROC-4": "yes", "PROC-5": "partial",
+      "DATA-1": "yes", "DATA-2": "yes", "DATA-3": "yes", "DATA-4": "yes", "DATA-5": "yes",
+      "TECH-1": "yes", "TECH-2": "yes", "TECH-3": "yes", "TECH-4": "yes", "TECH-5": "yes",
+      "GOV-1": "yes", "GOV-2": "yes", "GOV-3": "yes", "GOV-4": "yes", "GOV-5": "yes",
+    },
+  },
+];
+
 // --- Sample assessments ------------------------------------------------------------
 // Baseline keeps its full 4-tier treatment (Best/Good/Intentionally Off/Very Bad).
 // Water and Energy get 1 representative "Good" sample each — see DECISIONS.md for why
@@ -290,24 +369,31 @@ const ENERGY_SAMPLES = [
 export const FRAMEWORKS = [
   {
     id: "baseline",
-    label: "Financial Services / Enterprise Tech Governance (baseline)",
+    label: "Banking / Financial Services (baseline)",
     schemaVersion: "1.0",
     pillars: BASELINE_PILLARS,
     samples: BASELINE_SAMPLES,
   },
   {
     id: "water",
-    label: "Regulated Infrastructure / Water Asset Transformation",
+    label: "Regulated Infrastructure — Water Asset Transformation",
     schemaVersion: "1.1",
     pillars: WATER_PILLARS,
     samples: WATER_SAMPLES,
   },
   {
     id: "energy",
-    label: "Energy Grid Operating Model",
+    label: "Regulated Infrastructure — Energy Grid Operating Model",
     schemaVersion: "1.1",
     pillars: ENERGY_PILLARS,
     samples: ENERGY_SAMPLES,
+  },
+  {
+    id: "public-sector",
+    label: "Public Sector",
+    schemaVersion: "1.2",
+    pillars: PUBLIC_SECTOR_PILLARS,
+    samples: PUBLIC_SECTOR_SAMPLES,
   },
 ];
 

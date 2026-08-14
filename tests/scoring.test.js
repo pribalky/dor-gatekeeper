@@ -16,6 +16,7 @@ const expectedGateByFramework = {
   baseline: { best: "APPROVED", good: "APPROVED", intentionally_off: "CONDITIONAL", very_bad: "BLOCKED" },
   water: { good: "APPROVED" },
   energy: { good: "APPROVED" },
+  "public-sector": { good: "APPROVED" },
 };
 
 for (const framework of FRAMEWORKS) {
