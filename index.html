@@ -60,9 +60,68 @@
       <div class="export-buttons">
         <button id="export-json-btn" type="button" disabled>Export JSON</button>
         <button id="export-md-btn" type="button" disabled>Export Markdown</button>
+        <button id="export-opa-btn" type="button" disabled>Export OPA/Rego Policy</button>
       </div>
     </aside>
   </main>
+
+  <section class="panel-section">
+    <h2>Jira Ticket Content</h2>
+    <p class="section-note">Acceptance criteria, edge cases, and labels generated from the current gap list — paste directly into a Jira ticket's Description field.</p>
+    <textarea id="jira-copy-block" class="jira-copy-block" rows="14" readonly></textarea>
+    <div class="export-buttons">
+      <button id="jira-copy-btn" type="button">Copy to Clipboard</button>
+      <button id="jira-download-btn" type="button" class="secondary">Download .txt</button>
+    </div>
+    <p id="jira-copy-status" class="copy-status" role="status"></p>
+  </section>
+
+  <section class="panel-section">
+    <h2>AI Governance Router</h2>
+    <p class="section-note">Classify a decision by determinism and process complexity to get the governing quadrant and HITL guidance.</p>
+    <div class="header-controls">
+      <div class="field">
+        <label for="ai-determinism">Determinism</label>
+        <select id="ai-determinism">
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="ai-complexity">Process Complexity</label>
+        <select id="ai-complexity">
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+    </div>
+    <div id="ai-routing-result" class="ai-routing-result"></div>
+  </section>
+
+  <section class="panel-section">
+    <h2>Check a GitHub Pull Request</h2>
+    <p class="section-note">Pulls the changed-file list for a PR and flags files matching schema/contract patterns as a Schema/Contract Mutation risk. Informational only — not wired into the gate decision. Uses GitHub's public REST API directly from this page; if your network blocks calls to <code>api.github.com</code>, this will fail to fetch (see README).</p>
+    <div class="header-controls">
+      <div class="field">
+        <label for="pr-owner">Repo owner</label>
+        <input type="text" id="pr-owner" placeholder="e.g. pribalky" />
+      </div>
+      <div class="field">
+        <label for="pr-repo">Repo name</label>
+        <input type="text" id="pr-repo" placeholder="e.g. dor-gatekeeper" />
+      </div>
+      <div class="field">
+        <label for="pr-number">PR number</label>
+        <input type="text" id="pr-number" placeholder="e.g. 42" />
+      </div>
+      <div class="field">
+        <label for="pr-token">PAT (optional, kept in-memory only)</label>
+        <input type="password" id="pr-token" placeholder="Not stored or persisted" />
+      </div>
+      <button id="pr-check-btn" type="button">Check PR</button>
+    </div>
+    <div id="pr-drift-result" class="pr-drift-result"></div>
+  </section>
 
   <footer class="app-footer">
     <p>Companion tool: <a href="https://github.com/pribalky/dor-recovery-console">dor-recovery-console</a> (Delivery Recovery &amp; Governance Console) — ingests this app's JSON export.</p>

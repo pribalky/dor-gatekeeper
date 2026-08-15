@@ -1,5 +1,9 @@
 import "./scoring.test.js";
 import "./export.test.js";
+import "./opaExport.test.js";
+import "./jiraExport.test.js";
+import "./aiRouting.test.js";
+import "./prDriftCheck.test.js";
 import { summary } from "./assert.js";
 
 const { passCount, failCount, failures } = summary();

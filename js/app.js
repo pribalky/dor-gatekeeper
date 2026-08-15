@@ -3,6 +3,10 @@ import { scoreAssessment } from "./engine/scoring.js";
 import { deriveGaps } from "./engine/gaps.js";
 import { buildJsonExport, exportFilenameJson } from "./export/jsonExport.js";
 import { buildMarkdownExport, exportFilenameMd } from "./export/markdownExport.js";
+import { buildOpaPolicy, exportFilenameRego } from "./export/opaExport.js";
+import { buildJiraCopyBlock, exportFilenameJiraTxt } from "./export/jiraExport.js";
+import { routeAiDecision } from "./engine/aiRouting.js";
+import { classifyChangedFiles, fetchPrFiles } from "./engine/prDriftCheck.js";
 import { validateReadyForExport } from "./ui/validation.js";
 import { renderChecklist, onRadioChange, setAnswers, clearAnswers, updateResults, showErrors } from "./ui/render.js";
 import { createInitialState } from "./state.js";
@@ -21,9 +25,23 @@ const els = {
   errors: document.getElementById("errors"),
   exportJsonBtn: document.getElementById("export-json-btn"),
   exportMdBtn: document.getElementById("export-md-btn"),
+  exportOpaBtn: document.getElementById("export-opa-btn"),
   resetBtn: document.getElementById("reset-btn"),
   assessmentId: document.getElementById("assessment-id"),
   assessmentDate: document.getElementById("assessment-date"),
+  jiraCopyBlock: document.getElementById("jira-copy-block"),
+  jiraCopyBtn: document.getElementById("jira-copy-btn"),
+  jiraDownloadBtn: document.getElementById("jira-download-btn"),
+  jiraCopyStatus: document.getElementById("jira-copy-status"),
+  aiDeterminism: document.getElementById("ai-determinism"),
+  aiComplexity: document.getElementById("ai-complexity"),
+  aiRoutingResult: document.getElementById("ai-routing-result"),
+  prOwner: document.getElementById("pr-owner"),
+  prRepo: document.getElementById("pr-repo"),
+  prNumber: document.getElementById("pr-number"),
+  prToken: document.getElementById("pr-token"),
+  prCheckBtn: document.getElementById("pr-check-btn"),
+  prDriftResult: document.getElementById("pr-drift-result"),
 };
 
 function activeFramework() {
@@ -44,7 +62,17 @@ function recompute() {
       actionItems: els.actionItems,
     },
   });
+  els.jiraCopyBlock.value = buildJiraCopyBlock(state, gaps);
   return { scoreResult, gaps };
+}
+
+function renderAiRoutingResult() {
+  const result = routeAiDecision(els.aiDeterminism.value, els.aiComplexity.value);
+  els.aiRoutingResult.innerHTML = `
+    <div class="ai-quadrant">${result.label}</div>
+    <p>${result.guidance}</p>
+    ${result.hitlRequired ? `<p class="hitl-flag">Human-in-the-loop review gate required before this decision takes effect.</p>` : ""}
+  `;
 }
 
 function refreshErrorsAndButtons() {
@@ -53,6 +81,7 @@ function refreshErrorsAndButtons() {
   const ready = errors.length === 0;
   els.exportJsonBtn.disabled = !ready;
   els.exportMdBtn.disabled = !ready;
+  els.exportOpaBtn.disabled = !ready;
 }
 
 function downloadFile(filename, content, mime) {
@@ -159,6 +188,54 @@ function init() {
     downloadFile(exportFilenameMd(state.feature_name, state.assessment_id), md, "text/markdown");
   });
 
+  els.exportOpaBtn.addEventListener("click", () => {
+    const framework = activeFramework();
+    const rego = buildOpaPolicy(framework);
+    downloadFile(exportFilenameRego(framework.id, state.assessment_id), rego, "text/plain");
+  });
+
+  els.jiraCopyBtn.addEventListener("click", async () => {
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard API unavailable");
+      await navigator.clipboard.writeText(els.jiraCopyBlock.value);
+      els.jiraCopyStatus.textContent = "Copied to clipboard.";
+    } catch {
+      els.jiraCopyStatus.textContent = "Clipboard copy unavailable in this context — select the text above and copy manually.";
+    }
+  });
+
+  els.jiraDownloadBtn.addEventListener("click", () => {
+    downloadFile(exportFilenameJiraTxt(state.feature_name, state.assessment_id), els.jiraCopyBlock.value, "text/plain");
+  });
+
+  els.aiDeterminism.addEventListener("change", renderAiRoutingResult);
+  els.aiComplexity.addEventListener("change", renderAiRoutingResult);
+
+  els.prCheckBtn.addEventListener("click", async () => {
+    const owner = els.prOwner.value.trim();
+    const repo = els.prRepo.value.trim();
+    const number = els.prNumber.value.trim();
+    if (!owner || !repo || !number) {
+      els.prDriftResult.innerHTML = `<p class="pr-error">Enter repo owner, repo name, and PR number.</p>`;
+      return;
+    }
+    els.prDriftResult.innerHTML = `<p>Checking…</p>`;
+    try {
+      const filenames = await fetchPrFiles(owner, repo, number, els.prToken.value.trim());
+      const classified = classifyChangedFiles(filenames);
+      const flagged = classified.filter((f) => f.flagged);
+      els.prDriftResult.innerHTML = `
+        <p>${classified.length} file(s) changed, ${flagged.length} flagged.</p>
+        <ul>${classified
+          .map((f) => `<li class="${f.flagged ? "pr-flagged" : ""}">${f.filename}${f.flagged ? ` — <strong>${f.reason}</strong>` : ""}</li>`)
+          .join("")}</ul>
+      `;
+    } catch (err) {
+      els.prDriftResult.innerHTML = `<p class="pr-error">Could not fetch PR files: ${err.message}. This may be blocked by your network's outbound policy — see README.</p>`;
+    }
+  });
+
+  renderAiRoutingResult();
   recompute();
   refreshErrorsAndButtons();
 }

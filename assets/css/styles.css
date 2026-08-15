@@ -331,3 +331,87 @@ button.secondary {
     position: static;
   }
 }
+
+.panel-section {
+  max-width: 1200px;
+  margin: 0 auto 1.5rem;
+  padding: 1.25rem 2rem;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+.panel-section h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.section-note {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
+}
+
+.jira-copy-block {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  resize: vertical;
+}
+
+.copy-status {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  min-height: 1.2em;
+}
+
+.ai-routing-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+}
+
+.ai-quadrant {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.4rem;
+}
+
+.hitl-flag {
+  color: var(--color-conditional);
+  font-weight: 600;
+}
+
+.pr-drift-result {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.pr-drift-result ul {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.pr-drift-result li {
+  padding: 0.3rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.pr-drift-result li:first-child {
+  border-top: none;
+}
+
+.pr-flagged {
+  color: var(--color-blocked);
+}
+
+.pr-error {
+  color: var(--color-blocked);
+}

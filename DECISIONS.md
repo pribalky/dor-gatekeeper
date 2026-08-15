@@ -223,3 +223,72 @@ This file is cross-referenced from both repos (`dor-gatekeeper` and `dor-recover
 **Why:** Procurement/probity risk is a distinct, well-understood category in public sector delivery (not a vague one-off), same bar applied to `Safety` for the infrastructure sectors. Two Public-Sector-specific items (FOI/Public Records, Accessibility) still route through `Other` rather than minting more new tags — reserving `Other` for genuinely narrow, less-recurring themes, and reserving a first-class tag for the theme that's central enough to appear twice.
 
 **Trade-off:** This is now the 3rd schema_version bump (1.0 → 1.1 → 1.2), each additive. Confirms the extension mechanism is a repeatable pattern, not a one-off — but each new sector still requires an App 2 cost-model entry to avoid falling through to "Other" (see `dor-recovery-console`'s `DECISIONS.md`).
+
+---
+
+## 23. OPA/Rego policy export is real, runnable output — not illustrative text
+
+**Decision:** `js/export/opaExport.js`'s `buildOpaPolicy(framework)` emits a syntactically valid Rego module targeting modern `rego.v1` syntax (`if`/`contains` keywords), with two `deny` rules: one for a BLOCKED gate decision derived from `input.overall_score` against the framework's own thresholds, one for any unresolved High-severity gap in `input.pillars[].gaps[]`. It's wired to a new "Export OPA/Rego Policy" button and is also what `.github/actions/dor-gate-check` (#27 below) runs directly in CI.
+
+**Why:** The v2.0 PRD's "Executable NFR Policy-as-Code" module asked for policy that actually gates a pipeline, not a description of one. Generating real Rego — evaluable with `opa eval`/`conftest` as-is — keeps the claim honest without needing this app to run OPA itself (which would need a backend).
+
+**Trade-off:** No OPA binary is available in this session to validate the generated syntax at test time; `tests/opaExport.test.js` asserts on string content (package name, threshold values, both `deny` rules present) rather than actually evaluating the policy. Flagged as a manual-verification step — run `opa eval` yourself, or exercise it via the GitHub Action (#27), before relying on it in a real pipeline.
+
+---
+
+## 24. Jira ticket content is generated for copy-paste, not written via Jira's API
+
+**Decision:** `js/export/jiraExport.js` generates acceptance criteria (Gherkin-style, one per gap), edge-case test prompts (via a new `js/config/edgeCaseMap.js` category_tag lookup, same pattern as `interventionMap.js`), and Jira-label-safe tags, combined into one Jira-wiki-markup block (`buildJiraCopyBlock`). The new "Jira Ticket Content" panel shows this in a live, read-only textarea with a **Copy to Clipboard** button (`navigator.clipboard.writeText`, with a visible fallback message if the Clipboard API is unavailable) and a **Download .txt** option.
+
+**Why:** The PRD's "auto-generates AC/edge-case/NFR tags directly inside Jira tickets" requires writing to Jira's REST API, which needs OAuth and a backend — a genuine architectural pivot this session explicitly deferred. Generating the same content and making it trivially paste-ready keeps the actual value (a human doesn't have to author these from scratch) without pretending this app has write access it doesn't have.
+
+**Trade-off:** A human still has to open the ticket and paste — there's no write-back confirmation loop. Listed under the deferred backend-requiring roadmap (#28) as "Jira/ADO write-back."
+
+---
+
+## 25. AI Governance routing is a static 2×2 lookup, not a learned or configurable model
+
+**Decision:** `js/engine/aiRouting.js`'s `routeAiDecision(determinism, complexity)` maps the 4 combinations of {High,Low} determinism × {High,Low} process complexity to one of 4 fixed quadrants (No AI/Deterministic, Standard Script, AI-Assisted/HITL, Pure AI Flow), each carrying guidance text and a `hitlRequired` flag. It's a standalone module with no interaction with the checklist/scoring engine — a routing decision doesn't depend on any one assessment's answers.
+
+**Why:** The PRD's §5 module names the 4 quadrants but doesn't fully specify the guidance text per quadrant, so this is an authored, documented mapping (same discipline as the cost bands and rework-risk config) rather than an invented black box. Keeping it decoupled from the checklist means it can be used to think through a decision independently of whether a full DoR assessment is in progress.
+
+**Trade-off:** Only 2 inputs, 2 levels each — a real governance decision may have more nuance than a 2×2 can capture. Deliberately kept simple to match what the PRD actually specified rather than inventing extra axes.
+
+---
+
+## 26. GitHub PR drift check is pull-on-demand, not passive/webhook-driven
+
+**Decision:** `js/engine/prDriftCheck.js` splits into a pure `classifyChangedFiles(filenames)` (flags files matching schema/contract patterns — `**/schema/**`, `**/migrations/**`, `*.proto`, `package.json`, `*.sql`, OpenAPI/Swagger paths) and a thin `fetchPrFiles(owner, repo, number, token)` wrapper calling GitHub's REST API directly from the browser. The new "Check a GitHub Pull Request" section is user-triggered and its result is purely informational — never wired into the gate decision. An optional PAT is kept in a page-local variable only, explicitly labeled as not persisted.
+
+**Why:** The PRD's "Passive Automation & Webhook Ingestion" and "Module 1 Passive Drift Engine" both require a backend to listen for webhook events — genuinely out of scope for a static app. A user-initiated pull against a specific PR gets the useful part (flagging schema/contract risk) without the always-on listening infrastructure.
+
+**Trade-off:** Only catches drift when someone remembers to check a specific PR, not automatically on every push — the honest cost of staying static. This session's own outbound network policy may block `fetch()` calls to `api.github.com` from a page context (a different path from the MCP tool's own GitHub access, which does work); `classifyChangedFiles` has full unit test coverage, `fetchPrFiles` has a mocked-fetch test, and real connectivity is called out in the README as needing manual verification in your own browser.
+
+---
+
+## 27. The OPA policy is also wrapped as a real, opt-in GitHub Action
+
+**Decision:** `.github/actions/dor-gate-check/action.yml` is a composite action using `open-policy-agent/setup-opa@v2` that runs `opa eval --fail-defined` against a policy file (from #23) and a dor-gatekeeper JSON export, failing the CI step if any `deny` rule fires. It's published in this repo for other repos to reference (`uses: pribalky/dor-gatekeeper/.github/actions/dor-gate-check@main`), not something this app hosts or triggers itself.
+
+**Why:** This is the honest version of "blocks non-compliant merges" the PRD describes — real and runnable, but opt-in per consuming repo's own CI, since this static app has no way to intercept another repo's pipeline itself.
+
+**Trade-off:** Requires the consuming repo to have both the Rego policy and the JSON export as CI artifacts already — this action doesn't generate them, it only evaluates them. Documented in the README's "Using this in your own CI" section.
+
+---
+
+## 28. V2.0 items deliberately deferred — require a backend
+
+**Decision:** The following PRD v2.0 features are documented here rather than built, because each requires infrastructure this project's `DECISIONS.md` #8/#10 deliberately excludes (a backend, a database, or an OAuth app):
+
+- **Passive webhook ingestion** (auto-triggered on push/PR, not user-initiated) — needs a server to receive and process webhook events; #26 above ships the pull-based equivalent instead.
+- **Passive drift detection running continuously** — same webhook dependency as above, plus somewhere to persist "what changed since last check" state across sessions.
+- **Jira/ADO write-back** (actually creating/updating tickets via API, not just generating paste-ready content) — needs OAuth credentials and a server to hold them; #24 above ships the copy-paste equivalent instead.
+- **Auto-revert / auto-schedule / auto-ticket actions** — any action taken *on the user's behalf* against an external system needs stored, refreshable credentials and an audit trail of what the automation did — a database, not a static page.
+- **Real static/dynamic code analysis for Blast-Radius / Resource Boundary profiling** — needs to actually clone and parse a target repo's source, which means compute beyond a browser tab and almost certainly a backend to run it on.
+- **Multi-tenancy** — every user of this app today gets their own local, in-memory session; supporting multiple organizations/teams with isolated data needs a database and auth, both explicitly out of scope (`DECISIONS.md` #8, #10).
+- **Persistent cross-session team dashboards** — requires storing assessments across sessions/users somewhere durable, i.e. a database.
+- **Closed-loop self-tuning of DoR weights** — requires collecting outcome data across many assessments over time and a place to store/train on it — meaningless for a single-session, no-persistence app.
+
+**Why:** Building any of these "lite" inside a static app would mean silently faking a capability (a fake webhook listener, a fake write-back that doesn't actually write) — worse than not building it, since it would mislead a user about what actually happened. Documenting the gap honestly, with a one-line reason each, matches the transparency already established for no-auth/no-DB/no-CI-CD (#8, #9) rather than quietly scope-creeping into a different architecture.
+
+**Trade-off:** None of the above ships. If real usage demands any of these, it's a deliberate architectural decision to add a backend — not something to bolt onto the static app piecemeal.

@@ -1,0 +1,31 @@
+name: "DoR Gate Check"
+description: "Evaluates a dor-gatekeeper OPA/Rego policy against a dor-gatekeeper JSON export and fails if any deny rule fires."
+inputs:
+  policy-file:
+    description: "Path to the .rego policy file exported from dor-gatekeeper (Export OPA/Rego Policy button)."
+    required: true
+  input-file:
+    description: "Path to the dor-gatekeeper JSON export to evaluate the policy against."
+    required: true
+  opa-version:
+    description: "OPA version to install."
+    required: false
+    default: "latest"
+runs:
+  using: "composite"
+  steps:
+    - name: Install OPA
+      uses: open-policy-agent/setup-opa@v2
+      with:
+        version: ${{ inputs.opa-version }}
+
+    - name: Evaluate DoR gate policy
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "Denials (if any):"
+        opa eval -d "${{ inputs.policy-file }}" -i "${{ inputs.input-file }}" "data.dor.gatekeeper.deny" --format pretty
+        # --fail-defined exits non-zero when the query result is non-empty, i.e. at
+        # least one deny message fired — this is the actual pass/fail gate.
+        opa eval -d "${{ inputs.policy-file }}" -i "${{ inputs.input-file }}" "data.dor.gatekeeper.deny" --fail-defined --format pretty > /dev/null
+        echo "DoR gate check passed — no denials."

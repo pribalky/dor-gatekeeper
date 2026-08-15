@@ -65,11 +65,11 @@ const BASELINE_PILLARS = [
     name: "Governance & Compliance",
     weight: 0.25,
     items: [
-      { id: "GOV-1", label: "GDPR / data residency requirements confirmed", severity_gov: "High", category_tag: "PII", remediation: "Confirm data residency and GDPR applicability with the compliance team before build." },
+      { id: "GOV-1", label: "GDPR / data residency requirements confirmed", severity_gov: "High", category_tag: "PII", remediation: "Confirm data residency and GDPR applicability with the compliance team before build. For Tier 1 banking, also confirm alignment with BCBS 239 risk-data aggregation and reporting principles." },
       { id: "GOV-2", label: "Consent management mechanism defined", severity_gov: "High", category_tag: "Consent", remediation: "Define how user consent is captured, stored, and honoured across the data flow." },
       { id: "GOV-3", label: "Data retention & deletion policy documented", severity_gov: "Med", category_tag: "PII", remediation: "Document retention periods and the deletion mechanism for personal data." },
       { id: "GOV-4", label: "Third-party / subprocessor data flows reviewed", severity_gov: "Med", category_tag: "Consent", remediation: "Review and document any data flows to third-party subprocessors and their legal basis." },
-      { id: "GOV-5", label: "Prompt injection & jailbreak testing performed (OWASP LLM01)", severity_gov: "High", category_tag: "Other", category_tag_freetext: "Prompt Injection / Jailbreak Resistance (OWASP LLM01)", remediation: "Run adversarial prompt-injection / jailbreak test cases against the model before sign-off." },
+      { id: "GOV-5", label: "Prompt injection & jailbreak testing performed (OWASP LLM01)", severity_gov: "High", category_tag: "Other", category_tag_freetext: "Prompt Injection / Jailbreak Resistance (OWASP LLM01)", remediation: "Run adversarial prompt-injection / jailbreak test cases against the model before sign-off, and confirm output handling meets OWASP LLM06 (sensitive information disclosure) risk bounds." },
     ],
   },
 ];
@@ -234,7 +234,7 @@ const PUBLIC_SECTOR_PILLARS = [
     weight: 0.15,
     items: [
       { id: "DATA-1", label: "Cross-department data sharing agreement confirmed", severity_gov: "High", category_tag: "Consent", remediation: "Confirm the cross-department data sharing agreement is in place and current." },
-      { id: "DATA-2", label: "Citizen data privacy & PII safeguards validated", severity_gov: "High", category_tag: "PII", remediation: "Validate PII/privacy safeguards for citizen data on both inputs and outputs." },
+      { id: "DATA-2", label: "Citizen data privacy & PII safeguards validated", severity_gov: "High", category_tag: "PII", remediation: "Validate PII/privacy safeguards for citizen data on both inputs and outputs. Where health/clinical data is involved, confirm the safeguards also meet the sector's clinical data privacy standard (e.g. HIPAA-equivalent)." },
       { id: "DATA-3", label: "Legacy government system integration pattern documented", severity_gov: "Med", category_tag: "Lineage", remediation: "Document the legacy government system integration pattern and have it validated." },
       { id: "DATA-4", label: "Data quality for public reporting/statistics validated", severity_gov: "Med", category_tag: "Lineage", remediation: "Validate data quality feeding any public reporting or official statistics." },
       { id: "DATA-5", label: "Audit trail for ministerial/parliamentary reporting confirmed", severity_gov: "Med", category_tag: "Lineage", remediation: "Confirm the audit trail is complete for ministerial/parliamentary reporting obligations." },
@@ -369,28 +369,28 @@ const ENERGY_SAMPLES = [
 export const FRAMEWORKS = [
   {
     id: "baseline",
-    label: "Banking / Financial Services (baseline)",
+    label: "Financial Services (Tier 1 Banking, baseline)",
     schemaVersion: "1.0",
     pillars: BASELINE_PILLARS,
     samples: BASELINE_SAMPLES,
   },
   {
     id: "water",
-    label: "Regulated Infrastructure — Water Asset Transformation",
+    label: "Regulated Infrastructure & Utilities — Water Asset Transformation",
     schemaVersion: "1.1",
     pillars: WATER_PILLARS,
     samples: WATER_SAMPLES,
   },
   {
     id: "energy",
-    label: "Regulated Infrastructure — Energy Grid Operating Model",
+    label: "Regulated Infrastructure & Utilities — Energy Grid Operating Model",
     schemaVersion: "1.1",
     pillars: ENERGY_PILLARS,
     samples: ENERGY_SAMPLES,
   },
   {
     id: "public-sector",
-    label: "Public Sector",
+    label: "Public Sector / Healthcare",
     schemaVersion: "1.2",
     pillars: PUBLIC_SECTOR_PILLARS,
     samples: PUBLIC_SECTOR_SAMPLES,

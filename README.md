@@ -37,8 +37,15 @@ dor-gatekeeper/
 │   │   ├── scoring.js           # pure functions: pillar score, overall score, gate decision
 │   │   └── gaps.js              # derives the gap list from answers + criteria config
 │   ├── export/
-│   │   ├── jsonExport.js        # builds the export (schema_version 1.0 or 1.1, per active framework)
-│   │   └── markdownExport.js    # builds the human-readable audit report
+│   │   ├── jsonExport.js        # builds the export (schema_version 1.0/1.1/1.2, per active framework)
+│   │   ├── markdownExport.js    # builds the human-readable audit report
+│   │   ├── opaExport.js         # builds a runnable OPA/Rego policy from the active framework
+│   │   └── jiraExport.js        # builds Jira-paste-ready acceptance criteria / edge cases / labels
+│   ├── config/
+│   │   └── edgeCaseMap.js       # category_tag → edge-case test prompt, used by jiraExport.js
+│   ├── engine/ (continued)
+│   │   ├── aiRouting.js         # AI Governance 2×2 router (determinism × process complexity)
+│   │   └── prDriftCheck.js      # classifies a GitHub PR's changed files for schema/contract risk
 │   └── ui/
 │       ├── validation.js        # feature-name required, all-items-answered check
 │       └── render.js            # renders checklist, score panel, gap list, errors
@@ -46,7 +53,12 @@ dor-gatekeeper/
 │   ├── assert.js                 # ~30-line zero-dependency assertion helper
 │   ├── scoring.test.js           # weight aggregation + gate threshold boundaries
 │   ├── export.test.js            # JSON schema shape + Markdown content checks
+│   ├── opaExport.test.js         # Rego policy content checks (package, thresholds, deny rules)
+│   ├── jiraExport.test.js        # acceptance criteria / edge cases / labels / copy block content
+│   ├── aiRouting.test.js         # all 4 quadrants of the AI Governance router
+│   ├── prDriftCheck.test.js      # file classification (full coverage) + mocked-fetch network path
 │   └── run.js                    # runs all *.test.js, exits non-zero on failure
+├── .github/actions/dor-gate-check/action.yml  # composite Action wrapping opa eval for CI use
 ├── DECISIONS.md                 # shared rationale doc (cross-referenced with App 2)
 └── README.md
 ```
@@ -87,6 +99,28 @@ Each sector preset extends the `category_tag` enum with themes the original 8 ta
 ### Sample assessments
 
 The baseline framework's "load a sample assessment" dropdown offers 4 fixtures spanning the full gate range — **Best** (fully ready), **Good** (minor gaps only), **Intentionally Off** (borderline/conditional), **Very Bad** (not ready). Water, Energy, and Public Sector each offer 1 representative **Good** sample (see `DECISIONS.md` #20 for why the depth is asymmetric). None of these are just UI demos: they're defined once in `js/config/criteria.js` and imported directly by the test suite, which asserts each one gates to its documented decision.
+
+### Additional exports and tools
+
+Beyond JSON/Markdown, the assessment view offers:
+
+- **Export OPA/Rego Policy** — a real, `opa eval`-runnable Rego module (`js/export/opaExport.js`) that denies on a BLOCKED gate decision or any unresolved High-severity gap. Pair it with the JSON export in your own CI, or use the bundled GitHub Action below.
+- **Jira Ticket Content** — a live panel generating Gherkin-style acceptance criteria, edge-case test prompts, and Jira labels from the current gap list, in one Jira-wiki-markup block. Copy to clipboard or download as `.txt` — this app never writes to Jira's API directly (see `DECISIONS.md` #24).
+- **AI Governance Router** — a standalone 2×2 lookup (Determinism × Process Complexity) returning one of 4 governance quadrants with guidance and a human-in-the-loop flag, independent of the checklist.
+- **Check a GitHub Pull Request** — paste a PR's owner/repo/number (+ optional PAT, kept in-memory only) to flag changed files matching schema/contract patterns as a drift risk. Informational only, not wired into the gate decision. Requires your browser to reach `api.github.com` — some network policies block this.
+
+### Using this in your own CI
+
+`.github/actions/dor-gate-check` is a composite GitHub Action that installs OPA and runs `opa eval --fail-defined` against a policy file (from "Export OPA/Rego Policy" above) and a dor-gatekeeper JSON export, failing the step if any `deny` rule fires:
+
+```yaml
+- uses: pribalky/dor-gatekeeper/.github/actions/dor-gate-check@main
+  with:
+    policy-file: dor-policy.rego
+    input-file: dor-export.json
+```
+
+Both `policy-file` and `input-file` must already be present in your repo/pipeline as artifacts — this action evaluates them, it doesn't generate them.
 
 ## Running Locally
 
