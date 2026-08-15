@@ -57,17 +57,20 @@ dor-gatekeeper/
 │   ├── state.js                      # in-memory assessment state factory
 │   ├── config/
 │   │   ├── criteria.js               # FRAMEWORKS: 4 presets, each 5 pillars × 5 items + samples
-│   │   └── edgeCaseMap.js            # category_tag → edge-case test prompt (used by jiraExport.js)
+│   │   ├── edgeCaseMap.js            # category_tag → edge-case test prompt (used by jiraExport.js)
+│   │   └── aiHazardRules.js          # declarative { match, severity, flag, guidance } hazard rules
 │   ├── engine/
 │   │   ├── scoring.js                # pure: pillar score, overall score, gate decision
 │   │   ├── gaps.js                   # derives the gap list from answers + criteria config
 │   │   ├── aiRouting.js              # AI Governance 2×2 router (determinism × process complexity)
+│   │   ├── aiFeasibility.js          # evaluates aiHazardRules.js + derives the feasibility verdict
 │   │   └── prDriftCheck.js           # classifies a GitHub PR's changed files for schema/contract risk
 │   ├── export/
 │   │   ├── jsonExport.js             # App 2 handoff export (schema_version 1.0/1.1/1.2)
 │   │   ├── markdownExport.js         # human-readable audit report
 │   │   ├── opaExport.js              # runnable OPA/Rego policy for the active framework
-│   │   └── jiraExport.js             # Jira-paste-ready acceptance criteria / edge cases / labels
+│   │   ├── jiraExport.js             # Jira-paste-ready acceptance criteria / edge cases / labels
+│   │   └── aiFeasibilityAdr.js       # AI Feasibility ADR draft (Status/Context/Decision/Consequences)
 │   └── ui/
 │       ├── validation.js             # feature-name required, all-items-answered check
 │       └── render.js                 # renders checklist, score panel, gap list, errors
@@ -78,6 +81,7 @@ dor-gatekeeper/
 │   ├── opaExport.test.js             # Rego policy content checks
 │   ├── jiraExport.test.js            # acceptance criteria / edge cases / labels / copy block
 │   ├── aiRouting.test.js             # all 4 quadrants of the AI Governance router
+│   ├── aiFeasibility.test.js         # hazard rule triggers, verdict tiers, ADR export content
 │   ├── prDriftCheck.test.js          # file classification + mocked-fetch network path
 │   └── run.js                        # runs every *.test.js, exits non-zero on failure
 ├── DECISIONS.md                      # why things are built this way (shared with App 2)
