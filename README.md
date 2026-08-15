@@ -2,157 +2,216 @@
 
 **🔗 Live app: [pribalky.github.io/dor-gatekeeper](https://pribalky.github.io/dor-gatekeeper/)**
 
-An interactive, lightweight Target Operating Model / Definition of Ready gate — evaluated across 5 transformation pillars before commitment. Ships with 4 selectable assessment frameworks: a Banking/Financial Services baseline, two Regulated Infrastructure presets (Water Asset Transformation, Energy Grid Operating Model), and Public Sector.
+A Definition-of-Ready governance gate: a weighted checklist across 5 transformation pillars that produces a score, an APPROVED/CONDITIONAL/BLOCKED decision, and a list of gaps to remediate — before a feature, AI integration, or architecture change gets committed to.
 
-Fully static. No backend, no build step, no npm install. Runs entirely in the browser and deploys straight to GitHub Pages.
+Fully static. **No backend, no database, no build step, no `npm install`.** Plain HTML/CSS/JavaScript (ES modules), runs entirely in the browser, deploys straight to GitHub Pages.
 
-Companion tool: [`dor-recovery-console`](https://github.com/pribalky/dor-recovery-console) (Delivery Recovery & Governance Console) ingests this app's JSON export for programs that come back CONDITIONAL/BLOCKED.
+Companion app: **[`dor-recovery-console`](https://github.com/pribalky/dor-recovery-console)** — ingests this app's JSON export for anything that comes back CONDITIONAL/BLOCKED and adds financial exposure modeling, RAID tracking, and executive reporting. This app never does that job; see [Out of Scope](#out-of-scope).
 
 ---
 
-## Architecture
+## Quick start
+
+```bash
+git clone https://github.com/pribalky/dor-gatekeeper.git
+cd dor-gatekeeper
+python3 -m http.server 8000   # any static file server works
+```
+
+Open `http://localhost:8000/`. That's the whole setup — no install step exists.
+
+```bash
+node tests/run.js   # run the test suite (no npm install needed)
+```
+
+Requires only a modern browser (ES modules, `<dialog>`-free) and Node.js ≥ 18 for the test runner. Opening `index.html` directly via `file://` will **not** work — ES module imports require an HTTP origin.
+
+---
+
+## How it works
 
 ```
 [ User Inputs / Checklist ] ──► [ Weighted Scoring Engine ] ──► [ Risk Classifier & Decision ]
                                                                        │
-                                              ┌────────────────────────┴────────────────────────┐
-                                              ▼                                                   ▼
-                                  [ Markdown Audit Report ]                          [ JSON Export → App 2 ]
+                          ┌───────────────┬────────────────┬──────────┴─────────┬──────────────────┐
+                          ▼               ▼                ▼                    ▼                  ▼
+                  [ Gap Analysis ]  [ JSON → App 2 ]  [ Markdown Report ]  [ OPA/Rego Policy ]  [ Jira Content ]
 ```
 
-Everything — scoring, gap derivation, both exports — runs client-side against a single in-memory assessment state. No network calls, no server, nothing persisted beyond what you explicitly export.
+Everything — scoring, gap derivation, every export — runs client-side against a single in-memory assessment state (`js/state.js`). No network calls except the optional, user-triggered GitHub PR check. Nothing persists beyond what you explicitly export.
 
-## Folder Structure
+A **framework** (`js/config/criteria.js`) is a swappable sector preset: 5 pillars × 5 checklist items each, plus sample fixtures. Four ship today (Financial Services baseline, Water, Energy, Public Sector/Healthcare) but the scoring/export/UI code has no sector-specific logic — it's entirely driven by whichever framework is selected. See [Core concepts](#core-concepts) and [Extending this app](#extending-this-app) before adding a 5th.
+
+---
+
+## Project structure
 
 ```
 dor-gatekeeper/
-├── index.html                  # single-page app shell
-├── assets/css/styles.css       # all styling
+├── index.html                        # single-page app shell
+├── assets/css/styles.css             # all styling
+├── .github/actions/dor-gate-check/
+│   └── action.yml                    # composite GitHub Action wrapping `opa eval` for CI use
 ├── js/
-│   ├── app.js                   # entry point: wires state + DOM + event listeners
-│   ├── state.js                 # in-memory assessment state factory
+│   ├── app.js                        # entry point — wires state, DOM, and every event listener
+│   ├── state.js                      # in-memory assessment state factory
 │   ├── config/
-│   │   └── criteria.js          # FRAMEWORKS: 4 presets, each 5 pillars/weights/25 items + samples
+│   │   ├── criteria.js               # FRAMEWORKS: 4 presets, each 5 pillars × 5 items + samples
+│   │   └── edgeCaseMap.js            # category_tag → edge-case test prompt (used by jiraExport.js)
 │   ├── engine/
-│   │   ├── scoring.js           # pure functions: pillar score, overall score, gate decision
-│   │   └── gaps.js              # derives the gap list from answers + criteria config
+│   │   ├── scoring.js                # pure: pillar score, overall score, gate decision
+│   │   ├── gaps.js                   # derives the gap list from answers + criteria config
+│   │   ├── aiRouting.js              # AI Governance 2×2 router (determinism × process complexity)
+│   │   └── prDriftCheck.js           # classifies a GitHub PR's changed files for schema/contract risk
 │   ├── export/
-│   │   ├── jsonExport.js        # builds the export (schema_version 1.0/1.1/1.2, per active framework)
-│   │   ├── markdownExport.js    # builds the human-readable audit report
-│   │   ├── opaExport.js         # builds a runnable OPA/Rego policy from the active framework
-│   │   └── jiraExport.js        # builds Jira-paste-ready acceptance criteria / edge cases / labels
-│   ├── config/
-│   │   └── edgeCaseMap.js       # category_tag → edge-case test prompt, used by jiraExport.js
-│   ├── engine/ (continued)
-│   │   ├── aiRouting.js         # AI Governance 2×2 router (determinism × process complexity)
-│   │   └── prDriftCheck.js      # classifies a GitHub PR's changed files for schema/contract risk
+│   │   ├── jsonExport.js             # App 2 handoff export (schema_version 1.0/1.1/1.2)
+│   │   ├── markdownExport.js         # human-readable audit report
+│   │   ├── opaExport.js              # runnable OPA/Rego policy for the active framework
+│   │   └── jiraExport.js             # Jira-paste-ready acceptance criteria / edge cases / labels
 │   └── ui/
-│       ├── validation.js        # feature-name required, all-items-answered check
-│       └── render.js            # renders checklist, score panel, gap list, errors
+│       ├── validation.js             # feature-name required, all-items-answered check
+│       └── render.js                 # renders checklist, score panel, gap list, errors
 ├── tests/
-│   ├── assert.js                 # ~30-line zero-dependency assertion helper
-│   ├── scoring.test.js           # weight aggregation + gate threshold boundaries
-│   ├── export.test.js            # JSON schema shape + Markdown content checks
-│   ├── opaExport.test.js         # Rego policy content checks (package, thresholds, deny rules)
-│   ├── jiraExport.test.js        # acceptance criteria / edge cases / labels / copy block content
-│   ├── aiRouting.test.js         # all 4 quadrants of the AI Governance router
-│   ├── prDriftCheck.test.js      # file classification (full coverage) + mocked-fetch network path
-│   └── run.js                    # runs all *.test.js, exits non-zero on failure
-├── .github/actions/dor-gate-check/action.yml  # composite Action wrapping opa eval for CI use
-├── DECISIONS.md                 # shared rationale doc (cross-referenced with App 2)
-└── README.md
+│   ├── assert.js                     # ~30-line zero-dependency assertion helper
+│   ├── scoring.test.js               # weight aggregation + gate threshold boundaries
+│   ├── export.test.js                # JSON schema shape + Markdown content checks
+│   ├── opaExport.test.js             # Rego policy content checks
+│   ├── jiraExport.test.js            # acceptance criteria / edge cases / labels / copy block
+│   ├── aiRouting.test.js             # all 4 quadrants of the AI Governance router
+│   ├── prDriftCheck.test.js          # file classification + mocked-fetch network path
+│   └── run.js                        # runs every *.test.js, exits non-zero on failure
+├── DECISIONS.md                      # why things are built this way (shared with App 2)
+└── README.md                         # you are here
 ```
 
-## The Assessment
+**Rule of thumb for where new code goes:** `config/` is data (no logic, no DOM), `engine/` is pure functions over that data (no DOM), `export/` turns engine output into a downloadable string, `ui/` is the only layer allowed to touch the DOM. `app.js` is the sole place that wires them together.
 
-Every framework shares the same 5-pillar taxonomy, 25 checklist items (5 per pillar, each answered Yes / Partial / No), and scoring mechanics — only the *content* (weights, item wording, `category_tag` usage) changes per framework:
+---
 
-| Pillar |
-|---|
-| People & Capability |
-| Process & Workflow |
-| Data & Integration |
-| Technology & Infrastructure |
-| Governance & Compliance |
+## Core concepts
 
-Yes = full points, Partial = half, No = zero, within each pillar. Overall score is the weighted sum of pillar scores. Gate decision:
-
-- **85–100 → APPROVED**
-- **65–84 → CONDITIONAL**
-- **&lt;65 → BLOCKED**
-
-Any non-"Yes" answer becomes a gap, carrying that item's pre-assigned `severity_gov` and `category_tag` — both immutable downstream (see `DECISIONS.md` #3, #4). Full criteria list, remediation text, and rationale for the weight/threshold choices live in `js/config/criteria.js` and `DECISIONS.md`.
-
-### Frameworks
-
-The "Assessment framework / sector" dropdown switches between 4 presets, each defined in `js/config/criteria.js`'s `FRAMEWORKS`:
-
-| Framework | Focus | `schema_version` |
+| Concept | Shape | Where |
 |---|---|---|
-| Banking / Financial Services (baseline) | Software features, AI integrations, architecture changes | `1.0` |
-| Regulated Infrastructure — Water Asset Transformation | Regulatory compliance & capital delivery readiness | `1.1` |
-| Regulated Infrastructure — Energy Grid Operating Model | Capability mapping & cross-agency governance | `1.1` |
-| Public Sector | Procurement/probity, FOI, ministerial risk, citizen services | `1.2` |
+| **Framework** | `{ id, label, schemaVersion, pillars, samples }` | `FRAMEWORKS` array in `criteria.js` |
+| **Pillar** | `{ id, name, weight, items }` — 5 pillars per framework, weights sum to `1` | inside each framework |
+| **Item** | `{ id, label, severity_gov, category_tag, category_tag_freetext?, remediation }` | 5 items per pillar |
+| **Answer** | `"yes" \| "partial" \| "no"`, keyed by item `id` | `state.answers` |
+| **Gap** | Derived: one per non-`"yes"` answer, carrying its item's `severity_gov`/`category_tag`/`remediation` | `deriveGaps()` in `engine/gaps.js` |
 
-Each sector preset extends the `category_tag` enum with themes the original 8 tags don't honestly cover, additively, via a `schema_version` bump App 2 accepts alongside every prior version: Water/Energy add `Safety`, `AssetLifecycle`, `SupplyChain` (`"1.1"`); Public Sector adds `Probity` (`"1.2"`) — an extension of the schema per its own documented extensibility clause (PRD §7), not a breaking change. See `DECISIONS.md` #17–19, #21–22.
+**Scoring** (`engine/scoring.js`): `yes` = 20 points, `partial` = 10, `no` = 0 (`ANSWER_POINTS`). Pillar score = earned ÷ max × 100. Overall score = Σ(pillar score × pillar weight). Gate decision (`GATE_THRESHOLDS`): **≥85 APPROVED**, **≥65 CONDITIONAL**, **else BLOCKED**.
 
-### Sample assessments
+**`severity_gov` and `category_tag` are the data contract with App 2** — set once per checklist item and never mutated downstream (see `DECISIONS.md` #3–#4). `category_tag` is a closed enum; anything that doesn't fit uses `"Other"` + a required `category_tag_freetext`. Every sector preset shares the same 5-pillar taxonomy and scoring mechanics — only the *content* differs.
 
-The baseline framework's "load a sample assessment" dropdown offers 4 fixtures spanning the full gate range — **Best** (fully ready), **Good** (minor gaps only), **Intentionally Off** (borderline/conditional), **Very Bad** (not ready). Water, Energy, and Public Sector each offer 1 representative **Good** sample (see `DECISIONS.md` #20 for why the depth is asymmetric). None of these are just UI demos: they're defined once in `js/config/criteria.js` and imported directly by the test suite, which asserts each one gates to its documented decision.
+---
 
-### Additional exports and tools
+## Features
 
-Beyond JSON/Markdown, the assessment view offers:
+**Assessment & scoring**
+- 4 selectable sector frameworks (Financial Services, Water, Energy, Public Sector/Healthcare) — same taxonomy, different content and `schema_version`.
+- 7 bundled sample assessments (4 spanning the full gate range for baseline, 1 representative "Good" sample each for Water/Energy/Public Sector), provably correct — asserted directly in the test suite, not just UI demos.
 
-- **Export OPA/Rego Policy** — a real, `opa eval`-runnable Rego module (`js/export/opaExport.js`) that denies on a BLOCKED gate decision or any unresolved High-severity gap. Pair it with the JSON export in your own CI, or use the bundled GitHub Action below.
-- **Jira Ticket Content** — a live panel generating Gherkin-style acceptance criteria, edge-case test prompts, and Jira labels from the current gap list, in one Jira-wiki-markup block. Copy to clipboard or download as `.txt` — this app never writes to Jira's API directly (see `DECISIONS.md` #24).
-- **AI Governance Router** — a standalone 2×2 lookup (Determinism × Process Complexity) returning one of 4 governance quadrants with guidance and a human-in-the-loop flag, independent of the checklist.
-- **Check a GitHub Pull Request** — paste a PR's owner/repo/number (+ optional PAT, kept in-memory only) to flag changed files matching schema/contract patterns as a drift risk. Informational only, not wired into the gate decision. Requires your browser to reach `api.github.com` — some network policies block this.
+**Exports**
+- **JSON** — the App 2 handoff contract.
+- **Markdown** — human-readable audit report.
+- **OPA/Rego policy** — a real, `opa eval`-runnable policy per framework; denies on a BLOCKED gate or any unresolved High-severity gap.
+- **Jira ticket content** — live-generated acceptance criteria, edge cases, and labels in one paste-ready block (copy-to-clipboard or `.txt` download); this app never writes to Jira's API directly.
 
-### Using this in your own CI
+**Standalone tools** (decoupled from the checklist — usable independently)
+- **AI Governance Router** — 2×2 lookup (Determinism × Process Complexity) → governance quadrant + HITL guidance.
+- **GitHub PR drift check** — paste a PR's owner/repo/number to flag changed files matching schema/contract patterns. Informational only, not wired into the gate decision. Requires your browser to reach `api.github.com`.
 
-`.github/actions/dor-gate-check` is a composite GitHub Action that installs OPA and runs `opa eval --fail-defined` against a policy file (from "Export OPA/Rego Policy" above) and a dor-gatekeeper JSON export, failing the step if any `deny` rule fires:
+**CI integration**
+- `.github/actions/dor-gate-check` — a composite Action that runs the exported Rego policy via `opa eval --fail-defined` against a dor-gatekeeper JSON export, failing the step on any denial:
 
-```yaml
-- uses: pribalky/dor-gatekeeper/.github/actions/dor-gate-check@main
-  with:
-    policy-file: dor-policy.rego
-    input-file: dor-export.json
-```
+  ```yaml
+  - uses: pribalky/dor-gatekeeper/.github/actions/dor-gate-check@main
+    with:
+      policy-file: dor-policy.rego
+      input-file: dor-export.json
+  ```
 
-Both `policy-file` and `input-file` must already be present in your repo/pipeline as artifacts — this action evaluates them, it doesn't generate them.
+  Both files must already exist as artifacts in your pipeline — the action evaluates them, it doesn't generate them.
 
-## Running Locally
+---
 
-ES module imports require an HTTP origin — opening `index.html` directly via `file://` will fail in Chrome/Firefox. Serve the folder with any static server, e.g.:
+## Extending this app
 
-```bash
-python3 -m http.server 8000
-# then open http://localhost:8000/
-```
+### Add a new sector framework
+1. In `js/config/criteria.js`, define `const YOUR_SECTOR_PILLARS = [...]` — exactly 5 pillar objects (`id`, `name`, `weight`, `items`), weights summing to `1`, 5 items per pillar (see [Core concepts](#core-concepts) for the item shape).
+2. Define `const YOUR_SECTOR_SAMPLES = [...]` — 1 or more fixtures, each `{ id, label, feature_name, answers: { <item_id>: "yes"|"partial"|"no", ... } }` covering every item.
+3. Register both in the `FRAMEWORKS` array: `{ id, label, schemaVersion, pillars: YOUR_SECTOR_PILLARS, samples: YOUR_SECTOR_SAMPLES }`. Reuse the current `schemaVersion` unless you're also introducing a new `category_tag` (see below).
+4. That's it — `app.js` populates the framework/sample dropdowns from `FRAMEWORKS` automatically, and `tests/scoring.test.js`/`export.test.js` are parametrized over every entry in `FRAMEWORKS`, so your new framework is tested the moment it's registered.
 
-## Running Tests
+### Introduce a new `category_tag`
+`category_tag` is a closed enum shared with `dor-recovery-console` — a value used here that App 2 doesn't recognise gets the export **rejected**, not silently ignored.
+1. Use the new tag on the relevant item(s) in `criteria.js`.
+2. Bump that framework's `schemaVersion` to the next value — additive only, never reused or broken (`DECISIONS.md` #17–#19).
+3. In `dor-recovery-console`: add the tag to `js/config/costModel.js`'s `CATEGORY_COST_MODEL`, add the new `schemaVersion` to `SUPPORTED_SCHEMA_VERSIONS` in `js/ingestion/validate.js`, and (optionally, if relevant) `nfrGatewayMap.js` / `raidTypeMap.js` / `interventionMap.js`.
+4. If you're not sure a new tag is warranted, use `category_tag: "Other"` with a `category_tag_freetext` instead — no schema bump required.
+
+### Add a new export format
+Follow the pattern in `js/export/*.js`: a pure `buildXyz(framework, state, ...)` returning a string, plus `exportFilenameXyz(featureName, assessmentId)` (reuse `slugify` from `jsonExport.js`). Wire the button into `index.html` and call `downloadFile(...)` from `app.js`. Add `tests/xyzExport.test.js` asserting on the string content, then import it from `tests/run.js`.
+
+### Add a new standalone tool
+`aiRouting.js` and `prDriftCheck.js` are both pure, self-contained modules with their own UI section — neither touches the checklist, scoring engine, or gate decision. Follow that pattern unless your tool genuinely needs assessment data; keeping tools decoupled means they stay independently testable and can't accidentally change the gate outcome.
+
+---
+
+## Testing
 
 ```bash
 node tests/run.js
 ```
 
-No `npm install` required — `package.json` only sets `"type": "module"` so Node's native ESM loader can import the same files the browser uses.
+Zero-dependency custom runner (`tests/assert.js` + `tests/run.js`) — no Jest/Vitest, so there's still no `npm install`. Every `*.test.js` in `tests/` is imported by `run.js`; add new ones there. Tests that touch `FRAMEWORKS` iterate over the array rather than hardcoding a framework, so new frameworks are covered automatically.
+
+---
 
 ## Deploying to GitHub Pages
 
-No build step, so no Actions workflow is required:
+No build step, so no Actions workflow is required for the app itself:
 
 1. Push to `main`.
 2. Repo Settings → Pages → **Deploy from a branch** → branch `main`, folder `/ (root)`.
-3. Save. The app is live at `https://<owner>.github.io/dor-gatekeeper/` within a minute or two.
+3. Save. Live at `https://<owner>.github.io/dor-gatekeeper/` within a minute or two.
 
-`.nojekyll` is included so GitHub Pages serves the `js/`/`assets/` folders as-is without Jekyll processing.
+`.nojekyll` is included so GitHub Pages serves `js/`/`assets/` as-is without Jekyll processing.
 
-## Data Contract (App 2 Handoff)
+---
 
-"Export JSON" produces `{feature-name-slug}_{assessment_id}_dor_export.json` — the feature name leads so files stay recognizable in a downloads folder, with `assessment_id` kept in the name for stable tracking (see `DECISIONS.md` #16). The file content matches the schema App 2 ingests: `schema_version` (`"1.0"` baseline, `"1.1"`/`"1.2"` for the sector presets that use progressively extended `category_tag` enums), `assessment_id`, `assessment_date`, `feature_name`, `overall_score`, `gate_decision`, and `pillars[]` (each with `pillar_name`, `pillar_score`, and `gaps[]` carrying `gap_id`, `description`, `severity_gov`, `category_tag`, and `category_tag_freetext` when `category_tag` is `"Other"`). See `DECISIONS.md` for why this is a versioned file export rather than a shared database or live API.
+## Data contract (App 2 handoff)
 
-## Out of Scope
+"Export JSON" produces `{feature-name-slug}_{assessment_id}_dor_export.json`:
 
-Auth/SSO, persistent database, multi-tenant/concurrency handling, CI/CD pipeline/infra-as-code, financial modeling/RAID/exec reporting — the latter is `dor-recovery-console`'s job.
+```json
+{
+  "schema_version": "1.0",
+  "assessment_id": "…",
+  "assessment_date": "…",
+  "feature_name": "…",
+  "overall_score": 82.5,
+  "gate_decision": "CONDITIONAL",
+  "pillars": [
+    {
+      "pillar_name": "…",
+      "pillar_score": 70,
+      "gaps": [
+        { "gap_id": "…", "description": "…", "severity_gov": "High", "category_tag": "PII" }
+      ]
+    }
+  ]
+}
+```
+
+`schema_version` is `"1.0"` for the baseline framework, `"1.1"`/`"1.2"` for presets using the extended `category_tag` enum — always additive, never breaking (`DECISIONS.md`). This is a versioned file export, not a shared database or live API, by design.
+
+---
+
+## Related docs
+
+- **`DECISIONS.md`** — the "why," including trade-offs, for every non-obvious choice in this repo (numbered, cross-referenced with App 2).
+- **[`dor-recovery-console`](https://github.com/pribalky/dor-recovery-console)** — the companion app this one hands off to.
+
+## Out of scope
+
+Auth/SSO, a persistent database, multi-tenancy, a hosted CI/CD pipeline, and financial modeling/RAID/executive reporting — the last of those is `dor-recovery-console`'s job. See `DECISIONS.md`'s roadmap entry for the full list of PRD items deliberately deferred because they require a backend.
