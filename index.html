@@ -77,14 +77,14 @@
   </section>
 
   <section class="panel-section">
-    <h2>AI Governance Router</h2>
-    <p class="section-note">Classify a decision by determinism and process complexity to get the governing quadrant and HITL guidance.</p>
+    <h2>AI Governance &amp; Feasibility Router</h2>
+    <p class="section-note">Classify a proposed AI/automation design by determinism, complexity, data sensitivity, integration target, and latency/cost budget to get a governance quadrant, any hazard flags, and a feasibility verdict.</p>
     <div class="header-controls">
       <div class="field">
-        <label for="ai-determinism">Determinism</label>
+        <label for="ai-determinism">Model Type</label>
         <select id="ai-determinism">
-          <option value="high">High</option>
-          <option value="low">Low</option>
+          <option value="high">Deterministic Script</option>
+          <option value="low">Probabilistic / LLM</option>
         </select>
       </div>
       <div class="field">
@@ -94,8 +94,36 @@
           <option value="low">Low</option>
         </select>
       </div>
+      <div class="field">
+        <label for="ai-data-sensitivity">Data Sensitivity</label>
+        <select id="ai-data-sensitivity">
+          <option value="public">Public</option>
+          <option value="internal">Internal</option>
+          <option value="regulated">Regulated (PII / Core Banking / Health)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="ai-integration-target">Integration Target</label>
+        <select id="ai-integration-target">
+          <option value="legacy-batch">Legacy Monolith / Batch</option>
+          <option value="event-driven-api">Event-Driven API</option>
+          <option value="external-llm-api">External Third-Party LLM API</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="ai-latency-budget">Latency &amp; Cost Budget</label>
+        <select id="ai-latency-budget">
+          <option value="bounded">Bounded (e.g. &lt;200ms / capped spend)</option>
+          <option value="unbounded">Unbounded / best-effort</option>
+        </select>
+      </div>
     </div>
     <div id="ai-routing-result" class="ai-routing-result"></div>
+    <div id="ai-hazard-flags" class="ai-hazard-flags"></div>
+    <div id="ai-feasibility-verdict" class="ai-feasibility-verdict"></div>
+    <div class="export-buttons">
+      <button id="export-ai-feasibility-adr-btn" type="button">Export AI Feasibility ADR</button>
+    </div>
   </section>
 
   <section class="panel-section">

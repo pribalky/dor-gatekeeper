@@ -117,7 +117,7 @@ dor-gatekeeper/
 - **Jira ticket content** — live-generated acceptance criteria, edge cases, and labels in one paste-ready block (copy-to-clipboard or `.txt` download); this app never writes to Jira's API directly.
 
 **Standalone tools** (decoupled from the checklist — usable independently)
-- **AI Governance Router** — 2×2 lookup (Determinism × Process Complexity) → governance quadrant + HITL guidance.
+- **AI Governance & Feasibility Router** — a 2×2 lookup (Determinism × Process Complexity) returns a governance quadrant + HITL guidance; 3 more inputs (Data Sensitivity, Integration Target, Latency & Cost Budget) run against a declarative hazard-rule table (OWASP LLM-style flags, e.g. regulated data + an external LLM API → Data Leakage Risk) to produce a categorical feasibility verdict — **PROCEED** / **PROCEED WITH CONDITIONS** / **RECONSIDER APPROACH**, never an invented percentage score. One-click **Export AI Feasibility ADR** turns the inputs, quadrant, and any triggered flags into a Status/Context/Decision/Consequences record.
 - **GitHub PR drift check** — paste a PR's owner/repo/number to flag changed files matching schema/contract patterns. Informational only, not wired into the gate decision. Requires your browser to reach `api.github.com`.
 
 **CI integration**

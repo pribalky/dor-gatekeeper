@@ -6,6 +6,8 @@ import { buildMarkdownExport, exportFilenameMd } from "./export/markdownExport.j
 import { buildOpaPolicy, exportFilenameRego } from "./export/opaExport.js";
 import { buildJiraCopyBlock, exportFilenameJiraTxt } from "./export/jiraExport.js";
 import { routeAiDecision } from "./engine/aiRouting.js";
+import { evaluateHazards, deriveFeasibilityVerdict } from "./engine/aiFeasibility.js";
+import { buildAiFeasibilityAdr, exportFilenameAiFeasibilityAdr } from "./export/aiFeasibilityAdr.js";
 import { classifyChangedFiles, fetchPrFiles } from "./engine/prDriftCheck.js";
 import { validateReadyForExport } from "./ui/validation.js";
 import { renderChecklist, onRadioChange, setAnswers, clearAnswers, updateResults, showErrors } from "./ui/render.js";
@@ -35,7 +37,13 @@ const els = {
   jiraCopyStatus: document.getElementById("jira-copy-status"),
   aiDeterminism: document.getElementById("ai-determinism"),
   aiComplexity: document.getElementById("ai-complexity"),
+  aiDataSensitivity: document.getElementById("ai-data-sensitivity"),
+  aiIntegrationTarget: document.getElementById("ai-integration-target"),
+  aiLatencyBudget: document.getElementById("ai-latency-budget"),
   aiRoutingResult: document.getElementById("ai-routing-result"),
+  aiHazardFlags: document.getElementById("ai-hazard-flags"),
+  aiFeasibilityVerdict: document.getElementById("ai-feasibility-verdict"),
+  exportAiFeasibilityAdrBtn: document.getElementById("export-ai-feasibility-adr-btn"),
   prOwner: document.getElementById("pr-owner"),
   prRepo: document.getElementById("pr-repo"),
   prNumber: document.getElementById("pr-number"),
@@ -66,13 +74,41 @@ function recompute() {
   return { scoreResult, gaps };
 }
 
-function renderAiRoutingResult() {
-  const result = routeAiDecision(els.aiDeterminism.value, els.aiComplexity.value);
+function currentAiInputs() {
+  return {
+    determinism: els.aiDeterminism.value,
+    complexity: els.aiComplexity.value,
+    dataSensitivity: els.aiDataSensitivity.value,
+    integrationTarget: els.aiIntegrationTarget.value,
+    latencyCostBudget: els.aiLatencyBudget.value,
+  };
+}
+
+const VERDICT_CLASS = {
+  "PROCEED": "verdict-proceed",
+  "PROCEED WITH CONDITIONS": "verdict-conditions",
+  "RECONSIDER APPROACH": "verdict-reconsider",
+};
+
+function renderAiGovernanceAndFeasibility() {
+  const inputs = currentAiInputs();
+  const routing = routeAiDecision(inputs.determinism, inputs.complexity);
+  const hazards = evaluateHazards(inputs);
+  const verdict = deriveFeasibilityVerdict(hazards, routing.hitlRequired);
+
   els.aiRoutingResult.innerHTML = `
-    <div class="ai-quadrant">${result.label}</div>
-    <p>${result.guidance}</p>
-    ${result.hitlRequired ? `<p class="hitl-flag">Human-in-the-loop review gate required before this decision takes effect.</p>` : ""}
+    <div class="ai-quadrant">${routing.label}</div>
+    <p>${routing.guidance}</p>
+    ${routing.hitlRequired ? `<p class="hitl-flag">Human-in-the-loop review gate required before this decision takes effect.</p>` : ""}
   `;
+
+  els.aiHazardFlags.innerHTML = hazards.length
+    ? `<ul>${hazards.map((h) => `<li class="hazard-${h.severity.toLowerCase()}"><span class="hazard-severity">${h.severity}</span> <strong>${h.flag}</strong> — ${h.guidance}</li>`).join("")}</ul>`
+    : `<p class="empty">No hazards flagged for this configuration.</p>`;
+
+  els.aiFeasibilityVerdict.innerHTML = `<span class="feasibility-verdict ${VERDICT_CLASS[verdict]}">${verdict}</span>`;
+
+  return { inputs, routing, hazards, verdict };
 }
 
 function refreshErrorsAndButtons() {
@@ -208,8 +244,17 @@ function init() {
     downloadFile(exportFilenameJiraTxt(state.feature_name, state.assessment_id), els.jiraCopyBlock.value, "text/plain");
   });
 
-  els.aiDeterminism.addEventListener("change", renderAiRoutingResult);
-  els.aiComplexity.addEventListener("change", renderAiRoutingResult);
+  els.aiDeterminism.addEventListener("change", renderAiGovernanceAndFeasibility);
+  els.aiComplexity.addEventListener("change", renderAiGovernanceAndFeasibility);
+  els.aiDataSensitivity.addEventListener("change", renderAiGovernanceAndFeasibility);
+  els.aiIntegrationTarget.addEventListener("change", renderAiGovernanceAndFeasibility);
+  els.aiLatencyBudget.addEventListener("change", renderAiGovernanceAndFeasibility);
+
+  els.exportAiFeasibilityAdrBtn.addEventListener("click", () => {
+    const { inputs, routing, hazards, verdict } = renderAiGovernanceAndFeasibility();
+    const adr = buildAiFeasibilityAdr({ ...inputs, featureName: state.feature_name }, routing, hazards, verdict);
+    downloadFile(exportFilenameAiFeasibilityAdr(state.feature_name, state.assessment_id), adr, "text/markdown");
+  });
 
   els.prCheckBtn.addEventListener("click", async () => {
     const owner = els.prOwner.value.trim();
@@ -235,7 +280,7 @@ function init() {
     }
   });
 
-  renderAiRoutingResult();
+  renderAiGovernanceAndFeasibility();
   recompute();
   refreshErrorsAndButtons();
 }

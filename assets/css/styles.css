@@ -415,3 +415,52 @@ button.secondary {
 .pr-error {
   color: var(--color-blocked);
 }
+
+.ai-hazard-flags {
+  margin-top: 0.75rem;
+}
+
+.ai-hazard-flags ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+.ai-hazard-flags li {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.ai-hazard-flags li:first-child {
+  border-top: none;
+}
+
+.hazard-severity {
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-right: 0.3rem;
+}
+
+.hazard-high .hazard-severity { background: var(--color-blocked); color: #fff; }
+.hazard-med .hazard-severity { background: var(--color-conditional); color: #fff; }
+
+.ai-feasibility-verdict {
+  margin-top: 0.75rem;
+}
+
+.feasibility-verdict {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #fff;
+}
+
+.feasibility-verdict.verdict-proceed { background: var(--color-approved); }
+.feasibility-verdict.verdict-conditions { background: var(--color-conditional); }
+.feasibility-verdict.verdict-reconsider { background: var(--color-blocked); }

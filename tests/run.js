@@ -3,6 +3,7 @@ import "./export.test.js";
 import "./opaExport.test.js";
 import "./jiraExport.test.js";
 import "./aiRouting.test.js";
+import "./aiFeasibility.test.js";
 import "./prDriftCheck.test.js";
 import { summary } from "./assert.js";
 
