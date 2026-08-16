@@ -52,3 +52,10 @@ export function buildJsonExport(pillars, schemaVersion, state, scoreResult, gaps
 export function exportFilenameJson(featureName, assessmentId) {
   return `${slugify(featureName)}_${assessmentId}_dor_export.json`;
 }
+
+// Same JSON shape/content as exportFilenameJson — the "baseline" designation is
+// filename-only, a State Sync Bridge snapshot recognizable on dor-recovery-console's
+// side (see DECISIONS.md). No new export logic; buildJsonExport is reused as-is.
+export function exportFilenameBaseline(featureName, assessmentId) {
+  return `${slugify(featureName)}_${assessmentId}_dor_baseline.json`;
+}

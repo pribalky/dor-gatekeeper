@@ -33,4 +33,21 @@ export const HAZARD_RULES = [
     flag: "Unbounded Cost Risk",
     guidance: "No token/spend ceiling is implied by an unbounded budget. Require a hard cost cap and a circuit breaker before this reaches production traffic.",
   },
+  // MCP & Agentic Security — a declaration + flag, not runtime interception. This app
+  // has no way to observe an actual tool call; it asks the assessor to declare whether
+  // the design does agentic tool-calling and flags the standard hazard if so.
+  {
+    id: "agentic-mutating-mcp-tool-access",
+    match: { agenticToolAccess: "read-write-mcp" },
+    severity: "High",
+    flag: "Confused Deputy / Tool Poisoning Hazard (MCP)",
+    guidance: "Mutating tool calls (writing to or changing an external API/database via MCP) require a human-in-the-loop approval gate before execution, and tool responses must be validated before being chained into further actions — a poisoned or malicious tool response should never cascade unchecked.",
+  },
+  {
+    id: "agentic-readonly-mcp-tool-access-low-determinism",
+    match: { agenticToolAccess: "read-only-mcp", determinism: "low" },
+    severity: "Med",
+    flag: "Unvalidated Tool Output Risk",
+    guidance: "An LLM agent consuming external data via MCP, even read-only, should validate/sanitize tool responses before using them in downstream decisions — an untrusted or malformed response can still mislead a low-determinism model.",
+  },
 ];

@@ -1,7 +1,9 @@
 import "./scoring.test.js";
+import "./gaps.test.js";
 import "./export.test.js";
 import "./opaExport.test.js";
 import "./jiraExport.test.js";
+import "./checklistAdr.test.js";
 import "./aiRouting.test.js";
 import "./aiFeasibility.test.js";
 import "./prDriftCheck.test.js";

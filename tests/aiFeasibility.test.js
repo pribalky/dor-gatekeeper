@@ -2,9 +2,21 @@ import { assertEqual, assertTrue } from "./assert.js";
 import { HAZARD_RULES } from "../js/config/aiHazardRules.js";
 import { evaluateHazards, deriveFeasibilityVerdict } from "../js/engine/aiFeasibility.js";
 import { routeAiDecision } from "../js/engine/aiRouting.js";
-import { buildAiFeasibilityAdr, exportFilenameAiFeasibilityAdr } from "../js/export/aiFeasibilityAdr.js";
+import {
+  buildAiFeasibilityAdr,
+  exportFilenameAiFeasibilityAdr,
+  buildAiFeasibilityRego,
+  exportFilenameAiFeasibilityRego,
+} from "../js/export/aiFeasibilityAdr.js";
 
-const BASE_INPUTS = { determinism: "high", complexity: "high", dataSensitivity: "public", integrationTarget: "legacy-batch", latencyCostBudget: "bounded" };
+const BASE_INPUTS = {
+  determinism: "high",
+  complexity: "high",
+  dataSensitivity: "public",
+  integrationTarget: "legacy-batch",
+  latencyCostBudget: "bounded",
+  agenticToolAccess: "none",
+};
 
 // Each rule triggers independently and doesn't fire on non-matching inputs.
 // BASE_INPUTS' latencyCostBudget is "bounded", so regulated + external-llm-api
@@ -31,7 +43,29 @@ assertEqual(
   "unbounded latency/cost budget triggers the unbounded-cost rule"
 );
 assertEqual(evaluateHazards(BASE_INPUTS), [], "a clean, low-risk configuration triggers no hazards");
-assertEqual(HAZARD_RULES.length, 4, "sanity: 4 hazard rules are defined");
+assertEqual(HAZARD_RULES.length, 6, "sanity: 6 hazard rules are defined");
+
+// MCP & Agentic Security — declaration + flag, not runtime interception.
+assertEqual(
+  evaluateHazards({ ...BASE_INPUTS, agenticToolAccess: "read-write-mcp" }).map((h) => h.id),
+  ["agentic-mutating-mcp-tool-access"],
+  "read-write MCP tool access triggers the Confused Deputy / Tool Poisoning rule"
+);
+assertEqual(
+  evaluateHazards({ ...BASE_INPUTS, agenticToolAccess: "read-only-mcp", determinism: "low" }).map((h) => h.id),
+  ["agentic-readonly-mcp-tool-access-low-determinism"],
+  "read-only MCP tool access + low determinism triggers the unvalidated-tool-output rule"
+);
+assertEqual(
+  evaluateHazards({ ...BASE_INPUTS, agenticToolAccess: "read-only-mcp", determinism: "high" }),
+  [],
+  "read-only MCP tool access with high determinism (deterministic caller) triggers no hazard"
+);
+assertEqual(
+  evaluateHazards({ ...BASE_INPUTS, agenticToolAccess: "none" }),
+  [],
+  "no agentic tool access triggers no MCP-related hazard"
+);
 
 // Two rules can co-trigger (regulated + external LLM + unbounded budget).
 const stacked = evaluateHazards({ ...BASE_INPUTS, dataSensitivity: "regulated", integrationTarget: "external-llm-api", latencyCostBudget: "unbounded" });
@@ -81,4 +115,26 @@ assertEqual(
   exportFilenameAiFeasibilityAdr("Customer Support Chatbot", "abc-123"),
   "customer-support-chatbot_abc-123_ai_feasibility_adr.md",
   "AI feasibility ADR filename is slugified feature name + assessment_id"
+);
+
+// Rego policy snippet — real, opa-eval-runnable, denies only on RECONSIDER APPROACH.
+const reconsiderRego = buildAiFeasibilityRego(adrInputs, hazards, "RECONSIDER APPROACH");
+assertTrue(reconsiderRego.includes("package dor.ai_feasibility"), "Rego snippet declares the dor.ai_feasibility package");
+assertTrue(reconsiderRego.includes("import rego.v1"), "Rego snippet imports rego.v1");
+assertTrue(reconsiderRego.includes('verdict := "RECONSIDER APPROACH"'), "Rego snippet embeds the verdict");
+assertTrue(reconsiderRego.includes("deny contains msg if"), "Rego snippet declares a deny rule for RECONSIDER APPROACH");
+assertTrue(reconsiderRego.includes("Data Leakage Risk"), "Rego snippet includes a deny rule per triggered High-severity hazard");
+
+const proceedRego = buildAiFeasibilityRego(BASE_INPUTS, [], "PROCEED");
+assertTrue(proceedRego.includes('verdict := "PROCEED"'), "a PROCEED verdict's Rego snippet still embeds the verdict");
+assertEqual(
+  (proceedRego.match(/deny contains msg if \{/g) || []).length,
+  1,
+  "a PROCEED verdict with no High-severity hazards still declares exactly the base deny rule (which never fires for PROCEED)"
+);
+
+assertEqual(
+  exportFilenameAiFeasibilityRego("Customer Support Chatbot", "abc-123"),
+  "customer-support-chatbot_abc-123_ai_feasibility_policy.rego",
+  "AI feasibility Rego filename is slugified feature name + assessment_id"
 );

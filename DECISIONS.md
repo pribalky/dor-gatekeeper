@@ -316,3 +316,43 @@ Fonts are shipped as real `.ttf` files under `assets/fonts/` (own copy per repo,
 **Why:** The prior visual treatment was functional but never actually decided on — it was whatever came out of the first scaffold and just accumulated new panels over every subsequent delta. Comparing real, interactive options (not descriptions of options) let the actual decision-maker judge type pairing, density, and information architecture directly against real app content, rather than approving a written pitch.
 
 **Trade-off:** This was a large single-purpose commit touching almost every file in the app, deliberately kept free of *any* new feature/logic changes (see #31 for what was added immediately after) so a regression could only be structural/visual, not behavioral — verified by the unchanged 190-test suite plus a full headless-browser click-through of every pre-existing feature through the new shell.
+
+---
+
+## 31. Gap Analysis Breakdown only reflects answered items — "unanswered" was never a real gap
+
+**Decision:** `js/engine/gaps.js`'s `deriveGaps` now includes an item only when its answer is exactly `"partial"` or `"no"` — previously it included anything that wasn't `"yes"`, meaning an unanswered item (the default state of every item on page load or reset) was also pushed in as a gap with `answer: "unanswered"`. A fresh assessment now shows an empty Gap Analysis Breakdown, as it should, instead of all 25 items flagged as failed before anyone has touched the checklist.
+
+**Why:** "Unanswered" and "answered No" are not the same claim — one says a criterion failed, the other says nobody has looked at it yet. Collapsing them meant the panel's real signal (what's actually wrong) was drowned out by noise (what's simply not done yet) for the entire time a user is working through the checklist. `validation.js`'s `unansweredItemIds`/`validateReadyForExport` already independently blocks export while items remain unanswered — that check was never entangled with `deriveGaps`, so this fix is additive and isolated.
+
+**Trade-off:** None found — `gap.answer` is an App 1-internal/UI field (`jsonExport.js` never exports it, confirmed by re-reading the export builder), so narrowing its possible values from `{"partial", "no", "unanswered"}` to `{"partial", "no"}` has no downstream contract impact.
+
+---
+
+## 32. MCP & Agentic Security hazard rules are a declaration + flag, not runtime interception
+
+**Decision:** The AI Governance & Feasibility Router gained a 6th input, "Agentic Tool Access" (`none` / `read-only-mcp` / `read-write-mcp`), and 2 new declarative rules in `aiHazardRules.js`: mutating MCP tool access always flags High ("Confused Deputy / Tool Poisoning Hazard (MCP)" — requires an HITL approval gate before any write); read-only MCP access combined with a probabilistic/low-determinism model flags Med ("Unvalidated Tool Output Risk").
+
+**Why:** The originating request asked this app to "detect" confused-deputy/tool-poisoning attacks. It can't — there's no running agent or tool call for a static, client-side page to observe. What it can honestly do is what every other rule in this table already does: ask the assessor to declare a property of the proposed design and flag the known hazard class if so. Framed as governance intake, not security telemetry — the same honesty discipline already applied to the PR drift check (`DECISIONS.md` #26, informational only) and the OPA export (a real policy, not a simulated one).
+
+**Trade-off:** A dishonest or uninformed answer to "Agentic Tool Access" produces no flag — this is a self-reported checklist item like every other input in this router, not a control that can verify the claim.
+
+---
+
+## 33. ADR + Policy-as-Code bundles: one click, two files, no new Rego logic beyond what already existed
+
+**Decision:** Two new "Export ADR + Policy Bundle" actions were added, each downloading two files from one click. At the checklist level (new `js/export/checklistAdr.js`, `buildChecklistAdr`): a Status/Context/Decision/Consequences ADR (this app had no checklist-level ADR export before — only the Markdown audit report) paired with the *existing* `buildOpaPolicy` Rego export (`opaExport.js`, unchanged). On the AI Governance & Feasibility panel: the existing AI Feasibility ADR export is now paired with a new, small Rego snippet (`buildAiFeasibilityRego`, `aiFeasibilityAdr.js`) — a single `deny` rule firing on a `RECONSIDER APPROACH` verdict, plus one `deny` rule per triggered High-severity hazard.
+
+**Why:** The two ADR builders intentionally don't share a helper beyond `slugify` — a checklist ADR is about pillar/gap data, an AI feasibility ADR is about router inputs/hazards, and forcing a shared abstraction over two genuinely different data shapes would be premature generalization for two call sites. The AI Feasibility Rego snippet is deliberately minimal (verdict + per-High-hazard messages) rather than a general-purpose policy language over the hazard rule table — proving the verdict can gate a pipeline, not building a second OPA compiler.
+
+**Trade-off:** Two files downloading from one click has no user-facing progress/confirmation beyond the browser's own download UI — acceptable for a low-frequency governance action, not something a high-frequency workflow would want.
+
+---
+
+## 34. State Sync Bridge (gatekeeper side): a relabeled export, not a new format — and not `dor-core`
+
+**Decision:** "Export Gatekeeper Baseline" reuses `buildJsonExport` exactly as the existing "Export JSON" button does; the only new code is a filename helper (`exportFilenameBaseline`, `_dor_baseline.json` suffix) so the file is recognizable as a snapshot meant for later comparison on the `dor-recovery-console` side (see that repo's `DECISIONS.md` for the receiving "Baseline Drift" tab).
+
+**Why:** The originating pitch named this a `dor-core` JSON schema export implying a shared library between the two repos, and described the sync as "real-time." Neither is accurate: the JSON shape is already the existing, versioned App 1→App 2 contract (`DECISIONS.md` #2, #16-19) — a second export format would fork that contract for no reason — and there is no live channel between two static pages, only two files a person moves between them on their own schedule. Both corrections are made explicit here rather than silently building something that overclaims.
+
+**Trade-off:** None — this is the smallest possible implementation of the confirmed scope, by design.

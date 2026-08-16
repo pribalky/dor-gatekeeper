@@ -122,12 +122,20 @@
                   <option value="unbounded">Unbounded / best-effort</option>
                 </select>
               </div>
+              <div class="field">
+                <label for="ai-agentic-tool-access">Agentic Tool Access</label>
+                <select id="ai-agentic-tool-access">
+                  <option value="none">None</option>
+                  <option value="read-only-mcp">Read-Only External API/DB (MCP)</option>
+                  <option value="read-write-mcp">Read-Write / Mutating (MCP)</option>
+                </select>
+              </div>
             </div>
             <div id="ai-routing-result" class="ai-routing-result"></div>
             <div id="ai-hazard-flags" class="ai-hazard-flags"></div>
             <div id="ai-feasibility-verdict" class="ai-feasibility-verdict"></div>
             <div class="export-buttons">
-              <button id="export-ai-feasibility-adr-btn" type="button">Export AI Feasibility ADR</button>
+              <button id="export-ai-feasibility-adr-btn" type="button">Export ADR + Policy Bundle</button>
             </div>
           </section>
         </div>
@@ -172,6 +180,8 @@
         <button id="export-json-btn" type="button" disabled>Export JSON</button>
         <button id="export-md-btn" type="button" disabled>Export Markdown</button>
         <button id="export-opa-btn" type="button" disabled>Export OPA/Rego Policy</button>
+        <button id="export-adr-bundle-btn" type="button" disabled>Export ADR + Policy Bundle</button>
+        <button id="export-baseline-btn" type="button" class="secondary" disabled>Export Gatekeeper Baseline</button>
       </div>
     </aside>
   </div>

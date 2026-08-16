@@ -1,13 +1,19 @@
 import { FRAMEWORKS } from "./config/criteria.js";
 import { scoreAssessment } from "./engine/scoring.js";
 import { deriveGaps } from "./engine/gaps.js";
-import { buildJsonExport, exportFilenameJson } from "./export/jsonExport.js";
+import { buildJsonExport, exportFilenameJson, exportFilenameBaseline } from "./export/jsonExport.js";
 import { buildMarkdownExport, exportFilenameMd } from "./export/markdownExport.js";
 import { buildOpaPolicy, exportFilenameRego } from "./export/opaExport.js";
 import { buildJiraCopyBlock, exportFilenameJiraTxt } from "./export/jiraExport.js";
+import { buildChecklistAdr, exportFilenameChecklistAdr } from "./export/checklistAdr.js";
 import { routeAiDecision } from "./engine/aiRouting.js";
 import { evaluateHazards, deriveFeasibilityVerdict } from "./engine/aiFeasibility.js";
-import { buildAiFeasibilityAdr, exportFilenameAiFeasibilityAdr } from "./export/aiFeasibilityAdr.js";
+import {
+  buildAiFeasibilityAdr,
+  exportFilenameAiFeasibilityAdr,
+  buildAiFeasibilityRego,
+  exportFilenameAiFeasibilityRego,
+} from "./export/aiFeasibilityAdr.js";
 import { classifyChangedFiles, fetchPrFiles } from "./engine/prDriftCheck.js";
 import { validateReadyForExport } from "./ui/validation.js";
 import { renderChecklist, onRadioChange, setAnswers, clearAnswers, updateResults, showErrors } from "./ui/render.js";
@@ -28,6 +34,8 @@ const els = {
   exportJsonBtn: document.getElementById("export-json-btn"),
   exportMdBtn: document.getElementById("export-md-btn"),
   exportOpaBtn: document.getElementById("export-opa-btn"),
+  exportAdrBundleBtn: document.getElementById("export-adr-bundle-btn"),
+  exportBaselineBtn: document.getElementById("export-baseline-btn"),
   resetBtn: document.getElementById("reset-btn"),
   assessmentId: document.getElementById("assessment-id"),
   assessmentDate: document.getElementById("assessment-date"),
@@ -40,6 +48,7 @@ const els = {
   aiDataSensitivity: document.getElementById("ai-data-sensitivity"),
   aiIntegrationTarget: document.getElementById("ai-integration-target"),
   aiLatencyBudget: document.getElementById("ai-latency-budget"),
+  aiAgenticToolAccess: document.getElementById("ai-agentic-tool-access"),
   aiRoutingResult: document.getElementById("ai-routing-result"),
   aiHazardFlags: document.getElementById("ai-hazard-flags"),
   aiFeasibilityVerdict: document.getElementById("ai-feasibility-verdict"),
@@ -110,6 +119,7 @@ function currentAiInputs() {
     dataSensitivity: els.aiDataSensitivity.value,
     integrationTarget: els.aiIntegrationTarget.value,
     latencyCostBudget: els.aiLatencyBudget.value,
+    agenticToolAccess: els.aiAgenticToolAccess.value,
   };
 }
 
@@ -147,6 +157,8 @@ function refreshErrorsAndButtons() {
   els.exportJsonBtn.disabled = !ready;
   els.exportMdBtn.disabled = !ready;
   els.exportOpaBtn.disabled = !ready;
+  els.exportAdrBundleBtn.disabled = !ready;
+  els.exportBaselineBtn.disabled = !ready;
 }
 
 function downloadFile(filename, content, mime) {
@@ -259,6 +271,22 @@ function init() {
     downloadFile(exportFilenameRego(framework.id, state.assessment_id), rego, "text/plain");
   });
 
+  els.exportAdrBundleBtn.addEventListener("click", () => {
+    const framework = activeFramework();
+    const { scoreResult, gaps } = recompute();
+    const adr = buildChecklistAdr(framework, state, scoreResult, gaps);
+    downloadFile(exportFilenameChecklistAdr(state.feature_name, state.assessment_id), adr, "text/markdown");
+    const rego = buildOpaPolicy(framework);
+    downloadFile(exportFilenameRego(framework.id, state.assessment_id), rego, "text/plain");
+  });
+
+  els.exportBaselineBtn.addEventListener("click", () => {
+    const framework = activeFramework();
+    const { scoreResult, gaps } = recompute();
+    const data = buildJsonExport(framework.pillars, framework.schemaVersion, state, scoreResult, gaps);
+    downloadFile(exportFilenameBaseline(state.feature_name, state.assessment_id), JSON.stringify(data, null, 2), "application/json");
+  });
+
   els.jiraCopyBtn.addEventListener("click", async () => {
     try {
       if (!navigator.clipboard) throw new Error("Clipboard API unavailable");
@@ -278,11 +306,14 @@ function init() {
   els.aiDataSensitivity.addEventListener("change", renderAiGovernanceAndFeasibility);
   els.aiIntegrationTarget.addEventListener("change", renderAiGovernanceAndFeasibility);
   els.aiLatencyBudget.addEventListener("change", renderAiGovernanceAndFeasibility);
+  els.aiAgenticToolAccess.addEventListener("change", renderAiGovernanceAndFeasibility);
 
   els.exportAiFeasibilityAdrBtn.addEventListener("click", () => {
     const { inputs, routing, hazards, verdict } = renderAiGovernanceAndFeasibility();
     const adr = buildAiFeasibilityAdr({ ...inputs, featureName: state.feature_name }, routing, hazards, verdict);
     downloadFile(exportFilenameAiFeasibilityAdr(state.feature_name, state.assessment_id), adr, "text/markdown");
+    const rego = buildAiFeasibilityRego(inputs, hazards, verdict);
+    downloadFile(exportFilenameAiFeasibilityRego(state.feature_name, state.assessment_id), rego, "text/plain");
   });
 
   els.prCheckBtn.addEventListener("click", async () => {

@@ -42,14 +42,17 @@ Everything — scoring, gap derivation, every export — runs client-side agains
 
 A **framework** (`js/config/criteria.js`) is a swappable sector preset: 5 pillars × 5 checklist items each, plus sample fixtures. Four ship today (Financial Services baseline, Water, Energy, Public Sector/Healthcare) but the scoring/export/UI code has no sector-specific logic — it's entirely driven by whichever framework is selected. See [Core concepts](#core-concepts) and [Extending this app](#extending-this-app) before adding a 5th.
 
+The page itself is a **"Tabbed Spread"** layout: a persistent sticky `<aside>` (gate badge, score panel, every checklist-level export) beside a `<main>` tab bar (Assessment, Gap Analysis, Jira Ticket Content, AI Governance & Feasibility, GitHub PR Check) — visually themed as **"Ledger"** (warm paper, ink-navy/oxblood, `IBMPlexSerif`/`InstrumentSans`/`IBMPlexMono`). Both were picked by direct comparison against interactive artifacts, not a written proposal — see `DECISIONS.md` #30.
+
 ---
 
 ## Project structure
 
 ```
 dor-gatekeeper/
-├── index.html                        # single-page app shell
-├── assets/css/styles.css             # all styling
+├── index.html                        # single-page app shell (Tabbed Spread: aside + tab-nav/tab-panels)
+├── assets/css/styles.css             # all styling — Ledger design tokens + @font-face
+├── assets/fonts/                     # IBMPlexSerif/InstrumentSans/IBMPlexMono, Regular+Bold each
 ├── .github/actions/dor-gate-check/
 │   └── action.yml                    # composite GitHub Action wrapping `opa eval` for CI use
 ├── js/
@@ -66,22 +69,25 @@ dor-gatekeeper/
 │   │   ├── aiFeasibility.js          # evaluates aiHazardRules.js + derives the feasibility verdict
 │   │   └── prDriftCheck.js           # classifies a GitHub PR's changed files for schema/contract risk
 │   ├── export/
-│   │   ├── jsonExport.js             # App 2 handoff export (schema_version 1.0/1.1/1.2)
+│   │   ├── jsonExport.js             # App 2 handoff export (schema_version 1.0/1.1/1.2) + baseline filename
 │   │   ├── markdownExport.js         # human-readable audit report
 │   │   ├── opaExport.js              # runnable OPA/Rego policy for the active framework
 │   │   ├── jiraExport.js             # Jira-paste-ready acceptance criteria / edge cases / labels
-│   │   └── aiFeasibilityAdr.js       # AI Feasibility ADR draft (Status/Context/Decision/Consequences)
+│   │   ├── checklistAdr.js           # checklist-level ADR (Status/Context/Decision/Consequences)
+│   │   └── aiFeasibilityAdr.js       # AI Feasibility ADR + a small Rego policy snippet
 │   └── ui/
 │       ├── validation.js             # feature-name required, all-items-answered check
 │       └── render.js                 # renders checklist, score panel, gap list, errors
 ├── tests/
 │   ├── assert.js                     # ~30-line zero-dependency assertion helper
 │   ├── scoring.test.js               # weight aggregation + gate threshold boundaries
+│   ├── gaps.test.js                  # deriveGaps: only partial/no answers become gaps
 │   ├── export.test.js                # JSON schema shape + Markdown content checks
 │   ├── opaExport.test.js             # Rego policy content checks
 │   ├── jiraExport.test.js            # acceptance criteria / edge cases / labels / copy block
+│   ├── checklistAdr.test.js          # checklist-level ADR section content
 │   ├── aiRouting.test.js             # all 4 quadrants of the AI Governance router
-│   ├── aiFeasibility.test.js         # hazard rule triggers, verdict tiers, ADR export content
+│   ├── aiFeasibility.test.js         # hazard rule triggers, verdict tiers, ADR + Rego export content
 │   ├── prDriftCheck.test.js          # file classification + mocked-fetch network path
 │   └── run.js                        # runs every *.test.js, exits non-zero on failure
 ├── DECISIONS.md                      # why things are built this way (shared with App 2)
@@ -100,7 +106,7 @@ dor-gatekeeper/
 | **Pillar** | `{ id, name, weight, items }` — 5 pillars per framework, weights sum to `1` | inside each framework |
 | **Item** | `{ id, label, severity_gov, category_tag, category_tag_freetext?, remediation }` | 5 items per pillar |
 | **Answer** | `"yes" \| "partial" \| "no"`, keyed by item `id` | `state.answers` |
-| **Gap** | Derived: one per non-`"yes"` answer, carrying its item's `severity_gov`/`category_tag`/`remediation` | `deriveGaps()` in `engine/gaps.js` |
+| **Gap** | Derived: one per item explicitly answered `"partial"` or `"no"` — an unanswered item is not yet a gap, so the panel starts empty (`DECISIONS.md` #31) | `deriveGaps()` in `engine/gaps.js` |
 
 **Scoring** (`engine/scoring.js`): `yes` = 20 points, `partial` = 10, `no` = 0 (`ANSWER_POINTS`). Pillar score = earned ÷ max × 100. Overall score = Σ(pillar score × pillar weight). Gate decision (`GATE_THRESHOLDS`): **≥85 APPROVED**, **≥65 CONDITIONAL**, **else BLOCKED**.
 
@@ -114,14 +120,16 @@ dor-gatekeeper/
 - 4 selectable sector frameworks (Financial Services, Water, Energy, Public Sector/Healthcare) — same taxonomy, different content and `schema_version`.
 - 7 bundled sample assessments (4 spanning the full gate range for baseline, 1 representative "Good" sample each for Water/Energy/Public Sector), provably correct — asserted directly in the test suite, not just UI demos.
 
-**Exports**
+**Exports** (aside — always visible, next to the score/gate)
 - **JSON** — the App 2 handoff contract.
 - **Markdown** — human-readable audit report.
 - **OPA/Rego policy** — a real, `opa eval`-runnable policy per framework; denies on a BLOCKED gate or any unresolved High-severity gap.
-- **Jira ticket content** — live-generated acceptance criteria, edge cases, and labels in one paste-ready block (copy-to-clipboard or `.txt` download); this app never writes to Jira's API directly.
+- **ADR + Policy Bundle** — a checklist-level ADR (Status/Context/Decision/Consequences) paired 1-click with the OPA/Rego export above.
+- **Gatekeeper Baseline** — the same JSON export, relabeled/refiled (`_dor_baseline.json`) as a snapshot for `dor-recovery-console`'s Baseline Drift comparison (State Sync Bridge — `DECISIONS.md` #34).
+- **Jira ticket content** (its own tab) — live-generated acceptance criteria, edge cases, and labels in one paste-ready block (copy-to-clipboard or `.txt` download); this app never writes to Jira's API directly.
 
 **Standalone tools** (decoupled from the checklist — usable independently)
-- **AI Governance & Feasibility Router** — a 2×2 lookup (Determinism × Process Complexity) returns a governance quadrant + HITL guidance; 3 more inputs (Data Sensitivity, Integration Target, Latency & Cost Budget) run against a declarative hazard-rule table (OWASP LLM-style flags, e.g. regulated data + an external LLM API → Data Leakage Risk) to produce a categorical feasibility verdict — **PROCEED** / **PROCEED WITH CONDITIONS** / **RECONSIDER APPROACH**, never an invented percentage score. One-click **Export AI Feasibility ADR** turns the inputs, quadrant, and any triggered flags into a Status/Context/Decision/Consequences record.
+- **AI Governance & Feasibility Router** — a 2×2 lookup (Determinism × Process Complexity) returns a governance quadrant + HITL guidance; 4 more inputs (Data Sensitivity, Integration Target, Latency & Cost Budget, Agentic Tool Access) run against a declarative hazard-rule table (OWASP LLM-style flags, e.g. regulated data + an external LLM API → Data Leakage Risk; mutating MCP tool access → Confused Deputy / Tool Poisoning Hazard, `DECISIONS.md` #32) to produce a categorical feasibility verdict — **PROCEED** / **PROCEED WITH CONDITIONS** / **RECONSIDER APPROACH**, never an invented percentage score. One-click **Export ADR + Policy Bundle** turns the inputs, quadrant, and any triggered flags into an ADR plus a small Rego snippet that denies on `RECONSIDER APPROACH`.
 - **GitHub PR drift check** — paste a PR's owner/repo/number to flag changed files matching schema/contract patterns. Informational only, not wired into the gate decision. Requires your browser to reach `api.github.com`.
 
 **CI integration**
