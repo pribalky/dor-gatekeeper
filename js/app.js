@@ -50,7 +50,36 @@ const els = {
   prToken: document.getElementById("pr-token"),
   prCheckBtn: document.getElementById("pr-check-btn"),
   prDriftResult: document.getElementById("pr-drift-result"),
+  tabButtons: document.querySelectorAll(".tab-nav [role='tab']"),
+  tabPanels: document.querySelectorAll(".tab-panel"),
 };
+
+function switchTab(tabId) {
+  els.tabButtons.forEach((btn) => {
+    const isActive = btn.dataset.tab === tabId;
+    btn.setAttribute("aria-selected", String(isActive));
+    btn.tabIndex = isActive ? 0 : -1;
+  });
+  els.tabPanels.forEach((panel) => {
+    const isActive = panel.id === `tab-${tabId}`;
+    panel.hidden = !isActive;
+    panel.classList.toggle("is-active", isActive);
+  });
+}
+
+// Left/Right arrow keys move focus between tabs and activate the newly focused one,
+// matching the standard ARIA tabs keyboard pattern (native <button>s already give
+// Tab/Enter/Space for free).
+function handleTabKeydown(event) {
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+  const buttons = Array.from(els.tabButtons);
+  const currentIndex = buttons.indexOf(event.target);
+  if (currentIndex === -1) return;
+  const delta = event.key === "ArrowRight" ? 1 : -1;
+  const next = buttons[(currentIndex + delta + buttons.length) % buttons.length];
+  next.focus();
+  switchTab(next.dataset.tab);
+}
 
 function activeFramework() {
   return FRAMEWORKS.find((f) => f.id === state.frameworkId) ?? FRAMEWORKS[0];
@@ -278,6 +307,11 @@ function init() {
     } catch (err) {
       els.prDriftResult.innerHTML = `<p class="pr-error">Could not fetch PR files: ${err.message}. This may be blocked by your network's outbound policy — see README.</p>`;
     }
+  });
+
+  els.tabButtons.forEach((btn) => {
+    btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    btn.addEventListener("keydown", handleTabKeydown);
   });
 
   renderAiGovernanceAndFeasibility();

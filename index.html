@@ -41,21 +41,132 @@
 
   <div id="errors" class="errors-region" role="alert"></div>
 
-  <main class="app-main">
-    <div id="checklist" class="checklist"></div>
+  <div class="app-shell">
+    <main class="shell-main">
+      <div class="tab-nav" role="tablist" aria-label="Assessment sections">
+        <button type="button" role="tab" id="tab-btn-assessment" aria-controls="tab-assessment" aria-selected="true" data-tab="assessment">Assessment</button>
+        <button type="button" role="tab" id="tab-btn-gaps" aria-controls="tab-gaps" aria-selected="false" data-tab="gaps" tabindex="-1">Gap Analysis</button>
+        <button type="button" role="tab" id="tab-btn-jira" aria-controls="tab-jira" aria-selected="false" data-tab="jira" tabindex="-1">Jira Ticket Content</button>
+        <button type="button" role="tab" id="tab-btn-ai" aria-controls="tab-ai" aria-selected="false" data-tab="ai" tabindex="-1">AI Governance &amp; Feasibility</button>
+        <button type="button" role="tab" id="tab-btn-pr" aria-controls="tab-pr" aria-selected="false" data-tab="pr" tabindex="-1">GitHub PR Check</button>
+      </div>
 
-    <aside class="results-panel">
+      <div class="tab-panels">
+        <div class="tab-panel is-active" id="tab-assessment" role="tabpanel" aria-labelledby="tab-btn-assessment">
+          <div id="checklist" class="checklist"></div>
+        </div>
+
+        <div class="tab-panel" id="tab-gaps" role="tabpanel" aria-labelledby="tab-btn-gaps" hidden>
+          <section class="panel">
+            <h2>Gap Analysis Breakdown</h2>
+            <ul id="gap-list" class="gap-list"></ul>
+          </section>
+          <section class="panel">
+            <h2>Architecture Action Items</h2>
+            <div id="action-items" class="action-items"></div>
+          </section>
+        </div>
+
+        <div class="tab-panel" id="tab-jira" role="tabpanel" aria-labelledby="tab-btn-jira" hidden>
+          <section class="panel">
+            <h2>Jira Ticket Content</h2>
+            <p class="section-note">Acceptance criteria, edge cases, and labels generated from the current gap list — paste directly into a Jira ticket's Description field.</p>
+            <textarea id="jira-copy-block" class="jira-copy-block" rows="14" readonly></textarea>
+            <div class="export-buttons">
+              <button id="jira-copy-btn" type="button">Copy to Clipboard</button>
+              <button id="jira-download-btn" type="button" class="secondary">Download .txt</button>
+            </div>
+            <p id="jira-copy-status" class="copy-status" role="status"></p>
+          </section>
+        </div>
+
+        <div class="tab-panel" id="tab-ai" role="tabpanel" aria-labelledby="tab-btn-ai" hidden>
+          <section class="panel">
+            <h2>AI Governance &amp; Feasibility Router</h2>
+            <p class="section-note">Classify a proposed AI/automation design by determinism, complexity, data sensitivity, integration target, and latency/cost budget to get a governance quadrant, any hazard flags, and a feasibility verdict.</p>
+            <div class="header-controls">
+              <div class="field">
+                <label for="ai-determinism">Model Type</label>
+                <select id="ai-determinism">
+                  <option value="high">Deterministic Script</option>
+                  <option value="low">Probabilistic / LLM</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="ai-complexity">Process Complexity</label>
+                <select id="ai-complexity">
+                  <option value="high">High</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="ai-data-sensitivity">Data Sensitivity</label>
+                <select id="ai-data-sensitivity">
+                  <option value="public">Public</option>
+                  <option value="internal">Internal</option>
+                  <option value="regulated">Regulated (PII / Core Banking / Health)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="ai-integration-target">Integration Target</label>
+                <select id="ai-integration-target">
+                  <option value="legacy-batch">Legacy Monolith / Batch</option>
+                  <option value="event-driven-api">Event-Driven API</option>
+                  <option value="external-llm-api">External Third-Party LLM API</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="ai-latency-budget">Latency &amp; Cost Budget</label>
+                <select id="ai-latency-budget">
+                  <option value="bounded">Bounded (e.g. &lt;200ms / capped spend)</option>
+                  <option value="unbounded">Unbounded / best-effort</option>
+                </select>
+              </div>
+            </div>
+            <div id="ai-routing-result" class="ai-routing-result"></div>
+            <div id="ai-hazard-flags" class="ai-hazard-flags"></div>
+            <div id="ai-feasibility-verdict" class="ai-feasibility-verdict"></div>
+            <div class="export-buttons">
+              <button id="export-ai-feasibility-adr-btn" type="button">Export AI Feasibility ADR</button>
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-panel" id="tab-pr" role="tabpanel" aria-labelledby="tab-btn-pr" hidden>
+          <section class="panel">
+            <h2>Check a GitHub Pull Request</h2>
+            <p class="section-note">Pulls the changed-file list for a PR and flags files matching schema/contract patterns as a Schema/Contract Mutation risk. Informational only — not wired into the gate decision. Uses GitHub's public REST API directly from this page; if your network blocks calls to <code>api.github.com</code>, this will fail to fetch (see README).</p>
+            <div class="header-controls">
+              <div class="field">
+                <label for="pr-owner">Repo owner</label>
+                <input type="text" id="pr-owner" placeholder="e.g. pribalky" />
+              </div>
+              <div class="field">
+                <label for="pr-repo">Repo name</label>
+                <input type="text" id="pr-repo" placeholder="e.g. dor-gatekeeper" />
+              </div>
+              <div class="field">
+                <label for="pr-number">PR number</label>
+                <input type="text" id="pr-number" placeholder="e.g. 42" />
+              </div>
+              <div class="field">
+                <label for="pr-token">PAT (optional, kept in-memory only)</label>
+                <input type="password" id="pr-token" placeholder="Not stored or persisted" />
+              </div>
+              <button id="pr-check-btn" type="button">Check PR</button>
+            </div>
+            <div id="pr-drift-result" class="pr-drift-result"></div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <aside class="app-aside">
       <div class="gate-badge-wrap">
         <span id="gate-badge" class="gate-badge"></span>
       </div>
 
       <div id="score-panel" class="score-panel"></div>
-
-      <h2>Gap Analysis Breakdown</h2>
-      <ul id="gap-list" class="gap-list"></ul>
-
-      <h2>Architecture Action Items</h2>
-      <div id="action-items" class="action-items"></div>
 
       <div class="export-buttons">
         <button id="export-json-btn" type="button" disabled>Export JSON</button>
@@ -63,93 +174,7 @@
         <button id="export-opa-btn" type="button" disabled>Export OPA/Rego Policy</button>
       </div>
     </aside>
-  </main>
-
-  <section class="panel-section">
-    <h2>Jira Ticket Content</h2>
-    <p class="section-note">Acceptance criteria, edge cases, and labels generated from the current gap list — paste directly into a Jira ticket's Description field.</p>
-    <textarea id="jira-copy-block" class="jira-copy-block" rows="14" readonly></textarea>
-    <div class="export-buttons">
-      <button id="jira-copy-btn" type="button">Copy to Clipboard</button>
-      <button id="jira-download-btn" type="button" class="secondary">Download .txt</button>
-    </div>
-    <p id="jira-copy-status" class="copy-status" role="status"></p>
-  </section>
-
-  <section class="panel-section">
-    <h2>AI Governance &amp; Feasibility Router</h2>
-    <p class="section-note">Classify a proposed AI/automation design by determinism, complexity, data sensitivity, integration target, and latency/cost budget to get a governance quadrant, any hazard flags, and a feasibility verdict.</p>
-    <div class="header-controls">
-      <div class="field">
-        <label for="ai-determinism">Model Type</label>
-        <select id="ai-determinism">
-          <option value="high">Deterministic Script</option>
-          <option value="low">Probabilistic / LLM</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="ai-complexity">Process Complexity</label>
-        <select id="ai-complexity">
-          <option value="high">High</option>
-          <option value="low">Low</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="ai-data-sensitivity">Data Sensitivity</label>
-        <select id="ai-data-sensitivity">
-          <option value="public">Public</option>
-          <option value="internal">Internal</option>
-          <option value="regulated">Regulated (PII / Core Banking / Health)</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="ai-integration-target">Integration Target</label>
-        <select id="ai-integration-target">
-          <option value="legacy-batch">Legacy Monolith / Batch</option>
-          <option value="event-driven-api">Event-Driven API</option>
-          <option value="external-llm-api">External Third-Party LLM API</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="ai-latency-budget">Latency &amp; Cost Budget</label>
-        <select id="ai-latency-budget">
-          <option value="bounded">Bounded (e.g. &lt;200ms / capped spend)</option>
-          <option value="unbounded">Unbounded / best-effort</option>
-        </select>
-      </div>
-    </div>
-    <div id="ai-routing-result" class="ai-routing-result"></div>
-    <div id="ai-hazard-flags" class="ai-hazard-flags"></div>
-    <div id="ai-feasibility-verdict" class="ai-feasibility-verdict"></div>
-    <div class="export-buttons">
-      <button id="export-ai-feasibility-adr-btn" type="button">Export AI Feasibility ADR</button>
-    </div>
-  </section>
-
-  <section class="panel-section">
-    <h2>Check a GitHub Pull Request</h2>
-    <p class="section-note">Pulls the changed-file list for a PR and flags files matching schema/contract patterns as a Schema/Contract Mutation risk. Informational only — not wired into the gate decision. Uses GitHub's public REST API directly from this page; if your network blocks calls to <code>api.github.com</code>, this will fail to fetch (see README).</p>
-    <div class="header-controls">
-      <div class="field">
-        <label for="pr-owner">Repo owner</label>
-        <input type="text" id="pr-owner" placeholder="e.g. pribalky" />
-      </div>
-      <div class="field">
-        <label for="pr-repo">Repo name</label>
-        <input type="text" id="pr-repo" placeholder="e.g. dor-gatekeeper" />
-      </div>
-      <div class="field">
-        <label for="pr-number">PR number</label>
-        <input type="text" id="pr-number" placeholder="e.g. 42" />
-      </div>
-      <div class="field">
-        <label for="pr-token">PAT (optional, kept in-memory only)</label>
-        <input type="password" id="pr-token" placeholder="Not stored or persisted" />
-      </div>
-      <button id="pr-check-btn" type="button">Check PR</button>
-    </div>
-    <div id="pr-drift-result" class="pr-drift-result"></div>
-  </section>
+  </div>
 
   <footer class="app-footer">
     <p>Companion tool: <a href="https://github.com/pribalky/dor-recovery-console">dor-recovery-console</a> (Delivery Recovery &amp; Governance Console) — ingests this app's JSON export.</p>
