@@ -18,6 +18,7 @@ import { classifyChangedFiles, fetchPrFiles } from "./engine/prDriftCheck.js";
 import { parseDeepLinkParams } from "./engine/deepLink.js";
 import { deriveThresholdSuggestions } from "./engine/thresholdSuggestions.js";
 import { deriveEscalationLikelihood } from "./engine/escalationLikelihood.js";
+import { suggestAnswersFromText } from "./engine/ticketAssist.js";
 import { escapeHtml } from "./ui/escapeHtml.js";
 import { validateReadyForExport } from "./ui/validation.js";
 import { renderChecklist, onRadioChange, setAnswers, clearAnswers, updateResults, showErrors } from "./ui/render.js";
@@ -33,6 +34,9 @@ const els = {
   scorePanel: document.getElementById("score-panel"),
   gateBadge: document.getElementById("gate-badge"),
   escalationBadge: document.getElementById("escalation-badge"),
+  ticketAssistInput: document.getElementById("ticket-assist-input"),
+  ticketAssistSuggestBtn: document.getElementById("ticket-assist-suggest-btn"),
+  ticketAssistSuggestions: document.getElementById("ticket-assist-suggestions"),
   gapList: document.getElementById("gap-list"),
   actionItems: document.getElementById("action-items"),
   errors: document.getElementById("errors"),
@@ -247,6 +251,59 @@ function renderEscalationBadge(gaps) {
   els.escalationBadge.title = `Based on ${likelihood.matchingGapCount} of your gaps falling in pillars (${likelihood.matchingPillars.join(", ")}) that have driven Medium/High rework risk in ≥3 recent dor-recovery-console assessments (this browser's history).`;
 }
 
+function findChecklistItem(itemId) {
+  for (const pillar of activeFramework().pillars) {
+    const item = pillar.items.find((i) => i.id === itemId);
+    if (item) return item;
+  }
+  return null;
+}
+
+function applyTicketAssistSuggestion(itemId) {
+  setAnswers(els.checklist, { [itemId]: "yes" });
+  onAnswerChange(itemId, "yes");
+}
+
+// Suggestions are never auto-applied on paste — each requires an explicit Apply
+// click (or the bulk "Apply All Suggested"), same "surface, don't mutate" pattern
+// as the threshold-suggestions banner and the AI hazard rules.
+function renderTicketAssistSuggestions() {
+  const suggestions = suggestAnswersFromText(els.ticketAssistInput.value, activeFramework().pillars);
+
+  if (suggestions.length === 0) {
+    els.ticketAssistSuggestions.hidden = true;
+    els.ticketAssistSuggestions.innerHTML = "";
+    return;
+  }
+
+  els.ticketAssistSuggestions.hidden = false;
+  els.ticketAssistSuggestions.innerHTML = `
+    ${suggestions
+      .map(
+        (s, i) => `
+      <div class="ticket-assist-suggestion" data-suggestion-index="${i}">
+        <p><strong>${escapeHtml(findChecklistItem(s.item_id)?.label ?? s.item_id)}</strong> — suggested <strong>Yes</strong>. Evidence: "${escapeHtml(s.evidence)}"</p>
+        <button type="button" class="ticket-assist-apply secondary" data-item-id="${s.item_id}">Apply</button>
+      </div>`
+      )
+      .join("")}
+    <button type="button" id="ticket-assist-apply-all-btn">Apply All Suggested</button>
+  `;
+
+  els.ticketAssistSuggestions.querySelectorAll(".ticket-assist-apply").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      applyTicketAssistSuggestion(btn.dataset.itemId);
+      btn.closest(".ticket-assist-suggestion").remove();
+    });
+  });
+
+  document.getElementById("ticket-assist-apply-all-btn")?.addEventListener("click", () => {
+    suggestions.forEach((s) => applyTicketAssistSuggestion(s.item_id));
+    els.ticketAssistSuggestions.hidden = true;
+    els.ticketAssistSuggestions.innerHTML = "";
+  });
+}
+
 function renderThresholdSuggestions() {
   const signals = readReworkSignalsSafe();
 
@@ -296,12 +353,19 @@ function applyDeepLink() {
   if (tab && VALID_TABS.has(tab)) switchTab(tab);
 }
 
+function clearTicketAssist() {
+  els.ticketAssistInput.value = "";
+  els.ticketAssistSuggestions.hidden = true;
+  els.ticketAssistSuggestions.innerHTML = "";
+}
+
 function switchFramework(frameworkId) {
   state.frameworkId = frameworkId;
   state.answers = {};
   els.sampleSelect.value = "";
   renderActiveChecklist();
   populateSampleSelect();
+  clearTicketAssist();
   recompute();
   refreshErrorsAndButtons();
 }
@@ -312,6 +376,8 @@ function init() {
   renderActiveChecklist();
   populateSampleSelect();
   els.checklist.addEventListener("change", onRadioChange(onAnswerChange));
+
+  els.ticketAssistSuggestBtn.addEventListener("click", renderTicketAssistSuggestions);
 
   els.featureName.addEventListener("input", () => {
     state.feature_name = els.featureName.value;
@@ -333,6 +399,7 @@ function init() {
     els.sampleSelect.value = "";
     renderActiveChecklist();
     populateSampleSelect();
+    clearTicketAssist();
     refreshMeta();
     recompute();
     refreshErrorsAndButtons();

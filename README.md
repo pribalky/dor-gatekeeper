@@ -62,7 +62,8 @@ dor-gatekeeper/
 │   ├── config/
 │   │   ├── criteria.js               # FRAMEWORKS: 4 presets, each 5 pillars × 5 items + samples
 │   │   ├── edgeCaseMap.js            # category_tag → edge-case test prompt (used by jiraExport.js)
-│   │   └── aiHazardRules.js          # declarative { match, severity, flag, guidance } hazard rules
+│   │   ├── aiHazardRules.js          # declarative { match, severity, flag, guidance } hazard rules
+│   │   └── checklistKeywordMap.js    # category_tag → keywords a pasted ticket might already cover
 │   ├── engine/
 │   │   ├── scoring.js                # pure: pillar score, overall score, gate decision
 │   │   ├── gaps.js                   # derives the gap list from answers + criteria config
@@ -71,7 +72,8 @@ dor-gatekeeper/
 │   │   ├── prDriftCheck.js           # classifies a GitHub PR's changed files for schema/contract risk
 │   │   ├── deepLink.js               # pure parseDeepLinkParams(search, hash) for ?sample=&framework=#tab=
 │   │   ├── thresholdSuggestions.js   # derives pillar suggestions from dor-recovery-console's shared signals
-│   │   └── escalationLikelihood.js   # pre-sprint escalation signal: current gaps × hot pillars
+│   │   ├── escalationLikelihood.js   # pre-sprint escalation signal: current gaps × hot pillars
+│   │   └── ticketAssist.js           # suggests checklist answers from pasted ticket text
 │   ├── export/
 │   │   ├── jsonExport.js             # App 2 handoff export (schema_version 1.0/1.1/1.2) + baseline filename
 │   │   ├── markdownExport.js         # human-readable audit report
@@ -96,6 +98,7 @@ dor-gatekeeper/
 │   ├── deepLink.test.js              # deep-link param parsing
 │   ├── thresholdSuggestions.test.js  # suggestion derivation + threshold boundary
 │   ├── escalationLikelihood.test.js  # tier boundaries + no-claim cases
+│   ├── ticketAssist.test.js          # keyword matching, never a negative claim
 │   └── run.js                        # runs every *.test.js, exits non-zero on failure
 ├── DECISIONS.md                      # why things are built this way (shared with App 2)
 └── README.md                         # you are here
@@ -126,6 +129,7 @@ dor-gatekeeper/
 **Assessment & scoring**
 - 4 selectable sector frameworks (Financial Services, Water, Energy, Public Sector/Healthcare) — same taxonomy, different content and `schema_version`.
 - 7 bundled sample assessments (4 spanning the full gate range for baseline, 1 representative "Good" sample each for Water/Energy/Public Sector), provably correct — asserted directly in the test suite, not just UI demos.
+- **Ticket-to-Checklist Assist** — paste a ticket's description/AC text above the checklist and click "Suggest Answers" to get keyword-matched suggestions with an evidence snippet; nothing is applied until you click "Apply" (per-suggestion or "Apply All Suggested") — never auto-fills on paste, and only ever suggests "Yes" from positive evidence, never infers a gap from a keyword's absence (`DECISIONS.md` #39).
 
 **Exports** (aside — always visible, next to the score/gate)
 - **JSON** — the App 2 handoff contract.

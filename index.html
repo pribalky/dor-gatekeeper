@@ -54,6 +54,13 @@
 
       <div class="tab-panels">
         <div class="tab-panel is-active" id="tab-assessment" role="tabpanel" aria-labelledby="tab-btn-assessment">
+          <section class="panel ticket-assist-panel">
+            <h2>Ticket-to-Checklist Assist</h2>
+            <p class="section-note">Paste a ticket's description text (optional) to suggest answers already covered by it — nothing is applied until you review and accept each one.</p>
+            <textarea id="ticket-assist-input" rows="4" placeholder="Paste Jira ticket description / acceptance criteria text here…"></textarea>
+            <button id="ticket-assist-suggest-btn" type="button" class="secondary">Suggest Answers</button>
+            <div id="ticket-assist-suggestions" class="ticket-assist-suggestions" hidden></div>
+          </section>
           <div id="checklist" class="checklist"></div>
         </div>
 
