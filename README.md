@@ -186,6 +186,8 @@ node tests/run.js
 
 Zero-dependency custom runner (`tests/assert.js` + `tests/run.js`) — no Jest/Vitest, so there's still no `npm install`. Every `*.test.js` in `tests/` is imported by `run.js`; add new ones there. Tests that touch `FRAMEWORKS` iterate over the array rather than hardcoding a framework, so new frameworks are covered automatically.
 
+`.github/workflows/test.yml` runs this same `node tests/run.js` on every push/PR to `main` — no `npm install` there either, just a Node runtime.
+
 ---
 
 ## Deploying to GitHub Pages
