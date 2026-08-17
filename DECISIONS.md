@@ -420,3 +420,13 @@ Fonts are shipped as real `.ttf` files under `assets/fonts/` (own copy per repo,
 **Why:** Per `CLAUDE.md`-equivalent discipline, accessibility is a stated requirement, not an afterthought. Treated as a one-time, human-reviewed audit (same precedent as the manual `opa eval` verification, #23) rather than a standing CI dependency — axe-core is normally an npm package, and wiring it into CI would reopen the "no npm, ever" question for no real payoff over an occasional manual pass.
 
 **Trade-off:** None of these fixes traded anything away — the color shift is imperceptible, the hover fix restores intended behavior, the landmark/label additions are additive markup only. A clean automated pass is not a full manual WCAG audit (screen-reader walkthroughs, keyboard-only flows beyond what earlier redesigns already verified); flagged honestly as the scope actually covered.
+
+---
+
+## 41. Ticket-to-Checklist Assist gets a matching demo text per sample, keyed by `feature_name`
+
+**Decision:** New `js/config/sampleTicketText.js`, `SAMPLE_TICKET_TEXT` — a lookup from a sample's `feature_name` (unique across every framework, unlike sample `id`, which repeats — every framework has a `"good"` sample) to a plausible ticket-description string crafted to trigger a few real `checklistKeywordMap.js` matches against that specific sample's own checklist items. `loadSample()` now pre-fills the Ticket-to-Checklist Assist textarea with the matching text and calls `renderTicketAssistSuggestions()` immediately, so picking any sample from the existing dropdown shows the feature already working — no typing required to see a real example. New `tests/sampleTicketText.test.js` asserts every sample in `FRAMEWORKS` has a matching entry, so a future sample added without a matching demo text fails loudly rather than silently shipping an empty textarea.
+
+**Why:** Requested directly — the feature is easy to overlook if a first-time visitor has to write their own ticket text to see it do anything. Pre-filling and rendering suggestions is non-destructive (identical to what "Suggest Answers" already does on click, just triggered automatically on sample load) — nothing is written to `state.answers` until a human clicks Apply, so this doesn't weaken the existing advisory-only discipline (#39) at all.
+
+**Trade-off:** One more file to keep in sync if a sample's checklist items change meaningfully — mitigated by the new test failing loudly on a missing entry, though it can't detect a demo text that's gone stale in content (still present, just no longer matching anything useful).

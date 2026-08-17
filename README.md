@@ -63,7 +63,8 @@ dor-gatekeeper/
 │   │   ├── criteria.js               # FRAMEWORKS: 4 presets, each 5 pillars × 5 items + samples
 │   │   ├── edgeCaseMap.js            # category_tag → edge-case test prompt (used by jiraExport.js)
 │   │   ├── aiHazardRules.js          # declarative { match, severity, flag, guidance } hazard rules
-│   │   └── checklistKeywordMap.js    # category_tag → keywords a pasted ticket might already cover
+│   │   ├── checklistKeywordMap.js    # category_tag → keywords a pasted ticket might already cover
+│   │   └── sampleTicketText.js       # feature_name → demo ticket text for Ticket-to-Checklist Assist
 │   ├── engine/
 │   │   ├── scoring.js                # pure: pillar score, overall score, gate decision
 │   │   ├── gaps.js                   # derives the gap list from answers + criteria config
@@ -99,6 +100,7 @@ dor-gatekeeper/
 │   ├── thresholdSuggestions.test.js  # suggestion derivation + threshold boundary
 │   ├── escalationLikelihood.test.js  # tier boundaries + no-claim cases
 │   ├── ticketAssist.test.js          # keyword matching, never a negative claim
+│   ├── sampleTicketText.test.js      # every sample has a matching demo text
 │   └── run.js                        # runs every *.test.js, exits non-zero on failure
 ├── DECISIONS.md                      # why things are built this way (shared with App 2)
 └── README.md                         # you are here
@@ -129,7 +131,7 @@ dor-gatekeeper/
 **Assessment & scoring**
 - 4 selectable sector frameworks (Financial Services, Water, Energy, Public Sector/Healthcare) — same taxonomy, different content and `schema_version`.
 - 7 bundled sample assessments (4 spanning the full gate range for baseline, 1 representative "Good" sample each for Water/Energy/Public Sector), provably correct — asserted directly in the test suite, not just UI demos.
-- **Ticket-to-Checklist Assist** — paste a ticket's description/AC text above the checklist and click "Suggest Answers" to get keyword-matched suggestions with an evidence snippet; nothing is applied until you click "Apply" (per-suggestion or "Apply All Suggested") — never auto-fills on paste, and only ever suggests "Yes" from positive evidence, never infers a gap from a keyword's absence (`DECISIONS.md` #39).
+- **Ticket-to-Checklist Assist** — paste a ticket's description/AC text above the checklist and click "Suggest Answers" to get keyword-matched suggestions with an evidence snippet; nothing is applied until you click "Apply" (per-suggestion or "Apply All Suggested") — never auto-fills on paste, and only ever suggests "Yes" from positive evidence, never infers a gap from a keyword's absence (`DECISIONS.md` #39). Every bundled sample comes with matching demo ticket text, pre-filled and pre-suggested the moment you pick it from the sample dropdown — no typing required to see the feature work (`DECISIONS.md` #41).
 
 **Exports** (aside — always visible, next to the score/gate)
 - **JSON** — the App 2 handoff contract.

@@ -19,6 +19,7 @@ import { parseDeepLinkParams } from "./engine/deepLink.js";
 import { deriveThresholdSuggestions } from "./engine/thresholdSuggestions.js";
 import { deriveEscalationLikelihood } from "./engine/escalationLikelihood.js";
 import { suggestAnswersFromText } from "./engine/ticketAssist.js";
+import { sampleTicketTextFor } from "./config/sampleTicketText.js";
 import { escapeHtml } from "./ui/escapeHtml.js";
 import { validateReadyForExport } from "./ui/validation.js";
 import { renderChecklist, onRadioChange, setAnswers, clearAnswers, updateResults, showErrors } from "./ui/render.js";
@@ -213,6 +214,12 @@ function loadSample(sampleId) {
   setAnswers(els.checklist, sample.answers);
   recompute();
   refreshErrorsAndButtons();
+
+  // Pre-fill the Ticket-to-Checklist Assist demo with matching example text and
+  // render its suggestions immediately — nothing is applied to state.answers until
+  // the visitor clicks Apply, so this is a safe, non-destructive worked example.
+  els.ticketAssistInput.value = sampleTicketTextFor(sample.feature_name);
+  renderTicketAssistSuggestions();
 }
 
 function onAnswerChange(itemId, value) {
