@@ -17,6 +17,7 @@ import {
 import { classifyChangedFiles, fetchPrFiles } from "./engine/prDriftCheck.js";
 import { parseDeepLinkParams } from "./engine/deepLink.js";
 import { deriveThresholdSuggestions } from "./engine/thresholdSuggestions.js";
+import { escapeHtml } from "./ui/escapeHtml.js";
 import { validateReadyForExport } from "./ui/validation.js";
 import { renderChecklist, onRadioChange, setAnswers, clearAnswers, updateResults, showErrors } from "./ui/render.js";
 import { createInitialState } from "./state.js";
@@ -236,7 +237,7 @@ function renderThresholdSuggestions() {
     .map(
       (s, i) => `
       <div class="threshold-suggestion" data-suggestion-index="${i}">
-        <p><strong>${s.pillar_name}</strong> has driven Medium/High rework risk in ${s.count} recent assessments (via dor-recovery-console) — consider tightening this pillar's checklist or weight.</p>
+        <p><strong>${escapeHtml(s.pillar_name)}</strong> has driven Medium/High rework risk in ${s.count} recent assessments (via dor-recovery-console) — consider tightening this pillar's checklist or weight.</p>
         <button type="button" class="threshold-suggestion-dismiss secondary" data-dismiss-index="${i}">Dismiss</button>
       </div>`
     )
@@ -396,11 +397,14 @@ function init() {
       els.prDriftResult.innerHTML = `
         <p>${classified.length} file(s) changed, ${flagged.length} flagged.</p>
         <ul>${classified
-          .map((f) => `<li class="${f.flagged ? "pr-flagged" : ""}">${f.filename}${f.flagged ? ` — <strong>${f.reason}</strong>` : ""}</li>`)
+          .map(
+            (f) =>
+              `<li class="${f.flagged ? "pr-flagged" : ""}">${escapeHtml(f.filename)}${f.flagged ? ` — <strong>${escapeHtml(f.reason)}</strong>` : ""}</li>`
+          )
           .join("")}</ul>
       `;
     } catch (err) {
-      els.prDriftResult.innerHTML = `<p class="pr-error">Could not fetch PR files: ${err.message}. This may be blocked by your network's outbound policy — see README.</p>`;
+      els.prDriftResult.innerHTML = `<p class="pr-error">Could not fetch PR files: ${escapeHtml(err.message)}. This may be blocked by your network's outbound policy — see README.</p>`;
     }
   });
 
