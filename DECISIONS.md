@@ -356,3 +356,13 @@ Fonts are shipped as real `.ttf` files under `assets/fonts/` (own copy per repo,
 **Why:** The originating pitch named this a `dor-core` JSON schema export implying a shared library between the two repos, and described the sync as "real-time." Neither is accurate: the JSON shape is already the existing, versioned App 1→App 2 contract (`DECISIONS.md` #2, #16-19) — a second export format would fork that contract for no reason — and there is no live channel between two static pages, only two files a person moves between them on their own schedule. Both corrections are made explicit here rather than silently building something that overclaims.
 
 **Trade-off:** None — this is the smallest possible implementation of the confirmed scope, by design.
+
+---
+
+## 35. `portal.html` presents the two apps as one product without merging their repos
+
+**Decision:** A new `portal.html`, sibling to `index.html`, is a persona-routed landing page ("Strategy-to-Execution Control Plane") with 3 cards — Squad Engineer/BA, Tech Lead/Architect, CXO/Board — each a direct link into a populated, pre-selected view of one of the two apps (via the new `?sample=&framework=#tab=` deep-linking, `js/engine/deepLink.js` — same shape and discipline as `dor-recovery-console`'s own `deepLink.js`/`DECISIONS.md` #31, independent copy per #1–2). This is the chosen alternative to a literal single-repo merge: both apps keep their own repo, tests, and live URL; `portal.html` is the only new surface, reusing every existing handler (`switchFramework`, `loadSample`, `switchTab`) rather than introducing new state or a router.
+
+**Why:** A genuine PRD-style pitch for "one unified app" was assessed against a literal repo merge (Option A) and this persona-shell approach (Option B). The merge would have reversed `DECISIONS.md` #1–2's deliberate two-repo decoupling for a large one-time migration cost, and broken both existing live URLs. The persona shell delivers the same experience a visitor actually has — one front door, landing on relevant, populated content per role — without touching either app's architecture.
+
+**Trade-off:** Not literally "one app" under the hood — still two repos, two deploys, two test suites. Considered the right trade for the cost/benefit; revisit only if a real technical reason (not narrative alone) requires a true merge.

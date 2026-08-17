@@ -1,6 +1,6 @@
 # DoR Gatekeeper
 
-**🔗 Live app: [pribalky.github.io/dor-gatekeeper](https://pribalky.github.io/dor-gatekeeper/)**
+**🔗 Live app: [pribalky.github.io/dor-gatekeeper](https://pribalky.github.io/dor-gatekeeper/)** · **🧭 [Strategy-to-Execution Control Plane portal](https://pribalky.github.io/dor-gatekeeper/portal.html)** — a persona-routed entry point across this app and its companion (`DECISIONS.md` #35).
 
 A Definition-of-Ready governance gate: a weighted checklist across 5 transformation pillars that produces a score, an APPROVED/CONDITIONAL/BLOCKED decision, and a list of gaps to remediate — before a feature, AI integration, or architecture change gets committed to.
 

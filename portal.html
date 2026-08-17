@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strategy-to-Execution Control Plane</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <style>
+    .portal-shell {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 4rem;
+    }
+
+    .portal-mission {
+      color: var(--color-text-muted);
+      max-width: 68ch;
+      margin: 0.75rem 0 0;
+    }
+
+    .portal-mission a {
+      color: var(--color-primary);
+    }
+
+    .portal-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2.5rem;
+    }
+
+    .portal-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-width: 1px 1px 2px 1px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .portal-card .eyebrow {
+      color: var(--color-primary);
+    }
+
+    .portal-card h2 {
+      font-size: 1.25rem;
+      margin: 0;
+    }
+
+    .portal-card p {
+      color: var(--color-text-muted);
+      font-size: 0.92rem;
+      flex-grow: 1;
+      margin: 0;
+    }
+
+    .portal-card a.btn {
+      display: inline-block;
+      text-align: center;
+      text-decoration: none;
+      margin-top: 0.5rem;
+    }
+
+    .portal-footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-top">
+      <h1>Strategy-to-Execution Control Plane</h1>
+      <p class="portal-mission">
+        A single governance narrative across two independently-deployed, zero-backend apps: <a href="index.html">DoR Gatekeeper</a> (pre-sprint feasibility) and <a href="https://pribalky.github.io/dor-recovery-console/">Delivery Recovery &amp; Governance Console</a> (in-flight drift and executive reporting). Pick your role below — each link lands you on a populated, relevant view, not a blank form.
+      </p>
+    </div>
+  </header>
+
+  <div class="portal-shell">
+    <div class="portal-cards">
+      <section class="portal-card">
+        <span class="eyebrow">Squad Engineer / BA</span>
+        <h2>Write specs, not boilerplate</h2>
+        <p>Auto-generated Jira acceptance criteria, edge cases, and labels from a checklist gap — paste-ready, saving the manual write-up per story.</p>
+        <a class="btn" href="index.html?sample=intentionally_off#tab=jira">Open Jira Ticket Content →</a>
+      </section>
+
+      <section class="portal-card">
+        <span class="eyebrow">Tech Lead / Architect</span>
+        <h2>Risk scorecards &amp; 1-click ADRs</h2>
+        <p>The AI Governance &amp; Feasibility Router: a determinism/complexity/data-sensitivity scorecard, OWASP-style hazard flags, and an ADR + OPA/Rego policy bundle in one click.</p>
+        <a class="btn" href="index.html?sample=intentionally_off#tab=ai">Open AI Governance &amp; Feasibility →</a>
+      </section>
+
+      <section class="portal-card">
+        <span class="eyebrow">CXO / Board</span>
+        <h2>One page, decision-ready</h2>
+        <p>The Executive Strategy-to-Execution Health Card: TOM feasibility, capital exposure flagged before commitment, and top root causes of rework — already rendered on arrival.</p>
+        <a class="btn" href="https://pribalky.github.io/dor-recovery-console/?sample=very_bad&health-card=1#tab=recovery">Open Executive Health Card →</a>
+      </section>
+    </div>
+
+    <p class="portal-footer">
+      Fully static, zero-backend, zero-maintenance — both apps deploy straight to GitHub Pages. See each app's own <code>README.md</code>/<code>DECISIONS.md</code> for the full architecture and what's deliberately out of scope (passive webhooks, cross-user closed-loop tuning, and real code profiling all require a backend this project doesn't have).
+    </p>
+  </div>
+</body>
+</html>

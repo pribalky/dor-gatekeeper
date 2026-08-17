@@ -15,6 +15,7 @@ import {
   exportFilenameAiFeasibilityRego,
 } from "./export/aiFeasibilityAdr.js";
 import { classifyChangedFiles, fetchPrFiles } from "./engine/prDriftCheck.js";
+import { parseDeepLinkParams } from "./engine/deepLink.js";
 import { validateReadyForExport } from "./ui/validation.js";
 import { renderChecklist, onRadioChange, setAnswers, clearAnswers, updateResults, showErrors } from "./ui/render.js";
 import { createInitialState } from "./state.js";
@@ -210,6 +211,28 @@ function onAnswerChange(itemId, value) {
   refreshErrorsAndButtons();
 }
 
+const VALID_TABS = new Set(["assessment", "gaps", "jira", "ai", "pr"]);
+
+// Applies ?framework=<id>&sample=<id>#tab=<id> from the URL — lets the persona portal
+// (portal.html) land a visitor directly on a populated, pre-selected view instead of
+// the blank checklist. Same "reuse the existing handlers, never auto-download" pattern
+// as dor-recovery-console's own applyDeepLink() (DECISIONS.md #31 there).
+function applyDeepLink() {
+  const { framework: frameworkId, sample: sampleId, tab } = parseDeepLinkParams(location.search, location.hash);
+
+  if (frameworkId && FRAMEWORKS.some((f) => f.id === frameworkId) && frameworkId !== state.frameworkId) {
+    els.frameworkSelect.value = frameworkId;
+    switchFramework(frameworkId);
+  }
+
+  if (sampleId) {
+    els.sampleSelect.value = sampleId;
+    loadSample(sampleId);
+  }
+
+  if (tab && VALID_TABS.has(tab)) switchTab(tab);
+}
+
 function switchFramework(frameworkId) {
   state.frameworkId = frameworkId;
   state.answers = {};
@@ -348,6 +371,7 @@ function init() {
   renderAiGovernanceAndFeasibility();
   recompute();
   refreshErrorsAndButtons();
+  applyDeepLink();
 }
 
 document.addEventListener("DOMContentLoaded", init);
