@@ -51,6 +51,7 @@ The page itself is a **"Tabbed Spread"** layout: a persistent sticky `<aside>` (
 ```
 dor-gatekeeper/
 ├── index.html                        # single-page app shell (Tabbed Spread: aside + tab-nav/tab-panels)
+├── portal.html                       # persona-routed landing page across this app + dor-recovery-console
 ├── assets/css/styles.css             # all styling — Ledger design tokens + @font-face
 ├── assets/fonts/                     # IBMPlexSerif/InstrumentSans/IBMPlexMono, Regular+Bold each
 ├── .github/actions/dor-gate-check/
@@ -67,7 +68,9 @@ dor-gatekeeper/
 │   │   ├── gaps.js                   # derives the gap list from answers + criteria config
 │   │   ├── aiRouting.js              # AI Governance 2×2 router (determinism × process complexity)
 │   │   ├── aiFeasibility.js          # evaluates aiHazardRules.js + derives the feasibility verdict
-│   │   └── prDriftCheck.js           # classifies a GitHub PR's changed files for schema/contract risk
+│   │   ├── prDriftCheck.js           # classifies a GitHub PR's changed files for schema/contract risk
+│   │   ├── deepLink.js               # pure parseDeepLinkParams(search, hash) for ?sample=&framework=#tab=
+│   │   └── thresholdSuggestions.js   # derives pillar suggestions from dor-recovery-console's shared signals
 │   ├── export/
 │   │   ├── jsonExport.js             # App 2 handoff export (schema_version 1.0/1.1/1.2) + baseline filename
 │   │   ├── markdownExport.js         # human-readable audit report
@@ -89,6 +92,8 @@ dor-gatekeeper/
 │   ├── aiRouting.test.js             # all 4 quadrants of the AI Governance router
 │   ├── aiFeasibility.test.js         # hazard rule triggers, verdict tiers, ADR + Rego export content
 │   ├── prDriftCheck.test.js          # file classification + mocked-fetch network path
+│   ├── deepLink.test.js              # deep-link param parsing
+│   ├── thresholdSuggestions.test.js  # suggestion derivation + threshold boundary
 │   └── run.js                        # runs every *.test.js, exits non-zero on failure
 ├── DECISIONS.md                      # why things are built this way (shared with App 2)
 └── README.md                         # you are here
@@ -131,6 +136,10 @@ dor-gatekeeper/
 **Standalone tools** (decoupled from the checklist — usable independently)
 - **AI Governance & Feasibility Router** — a 2×2 lookup (Determinism × Process Complexity) returns a governance quadrant + HITL guidance; 4 more inputs (Data Sensitivity, Integration Target, Latency & Cost Budget, Agentic Tool Access) run against a declarative hazard-rule table (OWASP LLM-style flags, e.g. regulated data + an external LLM API → Data Leakage Risk; mutating MCP tool access → Confused Deputy / Tool Poisoning Hazard, `DECISIONS.md` #32) to produce a categorical feasibility verdict — **PROCEED** / **PROCEED WITH CONDITIONS** / **RECONSIDER APPROACH**, never an invented percentage score. One-click **Export ADR + Policy Bundle** turns the inputs, quadrant, and any triggered flags into an ADR plus a small Rego snippet that denies on `RECONSIDER APPROACH`.
 - **GitHub PR drift check** — paste a PR's owner/repo/number to flag changed files matching schema/contract patterns. Informational only, not wired into the gate decision. Requires your browser to reach `api.github.com`.
+
+**Cross-app closed-loop tuning** — a dismissible banner, shown when `dor-recovery-console` (same-origin on GitHub Pages) has recorded 3+ recent Medium/High rework-risk signals against the same pillar: *"`{pillar_name}` has driven Medium/High rework risk in {n} recent assessments (via dor-recovery-console) — consider tightening this pillar's checklist or weight."* Read-only via shared `localStorage` (`dor:reworkSignals`) — advisory only, never auto-adjusts `FRAMEWORKS` or item weights (`DECISIONS.md` #36).
+
+**Persona portal & deep-linking** — [`portal.html`](https://pribalky.github.io/dor-gatekeeper/portal.html) routes 3 personas (Squad Engineer/BA, Tech Lead/Architect, CXO/Board) straight into a populated, relevant view of this app or `dor-recovery-console`, via `?sample=&framework=#tab=` deep-link params (`js/engine/deepLink.js`, `DECISIONS.md` #35).
 
 **CI integration**
 - `.github/actions/dor-gate-check` — a composite Action that runs the exported Rego policy via `opa eval --fail-defined` against a dor-gatekeeper JSON export, failing the step on any denial:

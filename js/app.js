@@ -16,6 +16,7 @@ import {
 } from "./export/aiFeasibilityAdr.js";
 import { classifyChangedFiles, fetchPrFiles } from "./engine/prDriftCheck.js";
 import { parseDeepLinkParams } from "./engine/deepLink.js";
+import { deriveThresholdSuggestions } from "./engine/thresholdSuggestions.js";
 import { validateReadyForExport } from "./ui/validation.js";
 import { renderChecklist, onRadioChange, setAnswers, clearAnswers, updateResults, showErrors } from "./ui/render.js";
 import { createInitialState } from "./state.js";
@@ -62,6 +63,7 @@ const els = {
   prDriftResult: document.getElementById("pr-drift-result"),
   tabButtons: document.querySelectorAll(".tab-nav [role='tab']"),
   tabPanels: document.querySelectorAll(".tab-panel"),
+  thresholdSuggestions: document.getElementById("threshold-suggestions"),
 };
 
 function switchTab(tabId) {
@@ -209,6 +211,45 @@ function onAnswerChange(itemId, value) {
   state.answers[itemId] = value;
   recompute();
   refreshErrorsAndButtons();
+}
+
+// Same key dor-recovery-console writes to — both apps share one browser origin
+// (pribalky.github.io, path doesn't affect origin), so this reads real diagnostic
+// signal, not a simulation. Advisory only: never mutates FRAMEWORKS/weights, only
+// renders a dismissible (session-only) suggestion. Every access is wrapped in
+// try/catch and silently no-ops if storage is unavailable.
+const REWORK_SIGNALS_KEY = "dor:reworkSignals";
+
+function renderThresholdSuggestions() {
+  let signals = [];
+  try {
+    signals = JSON.parse(localStorage.getItem(REWORK_SIGNALS_KEY) || "[]");
+  } catch {
+    return;
+  }
+
+  const suggestions = deriveThresholdSuggestions(signals);
+  if (suggestions.length === 0) return;
+
+  els.thresholdSuggestions.hidden = false;
+  els.thresholdSuggestions.innerHTML = suggestions
+    .map(
+      (s, i) => `
+      <div class="threshold-suggestion" data-suggestion-index="${i}">
+        <p><strong>${s.pillar_name}</strong> has driven Medium/High rework risk in ${s.count} recent assessments (via dor-recovery-console) — consider tightening this pillar's checklist or weight.</p>
+        <button type="button" class="threshold-suggestion-dismiss secondary" data-dismiss-index="${i}">Dismiss</button>
+      </div>`
+    )
+    .join("");
+
+  els.thresholdSuggestions.querySelectorAll("[data-dismiss-index]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      btn.closest(".threshold-suggestion").remove();
+      if (!els.thresholdSuggestions.querySelector(".threshold-suggestion")) {
+        els.thresholdSuggestions.hidden = true;
+      }
+    });
+  });
 }
 
 const VALID_TABS = new Set(["assessment", "gaps", "jira", "ai", "pr"]);
@@ -372,6 +413,7 @@ function init() {
   recompute();
   refreshErrorsAndButtons();
   applyDeepLink();
+  renderThresholdSuggestions();
 }
 
 document.addEventListener("DOMContentLoaded", init);

@@ -616,3 +616,35 @@ button.secondary {
 .feasibility-verdict.verdict-proceed { color: var(--color-approved); }
 .feasibility-verdict.verdict-conditions { color: var(--color-conditional); }
 .feasibility-verdict.verdict-reconsider { color: var(--color-blocked); }
+
+.threshold-suggestions-region {
+  max-width: 1280px;
+  margin: 1rem auto 0;
+  padding: 0 2rem;
+}
+
+.threshold-suggestion {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-conditional);
+  border-left-width: 4px;
+  margin-bottom: 0.5rem;
+  font-size: 0.87rem;
+}
+
+.threshold-suggestion p {
+  margin: 0;
+}
+
+.threshold-suggestion-dismiss {
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-color: var(--color-border-strong);
+  flex: none;
+}

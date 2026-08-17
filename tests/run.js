@@ -8,6 +8,7 @@ import "./aiRouting.test.js";
 import "./aiFeasibility.test.js";
 import "./prDriftCheck.test.js";
 import "./deepLink.test.js";
+import "./thresholdSuggestions.test.js";
 import { summary } from "./assert.js";
 
 const { passCount, failCount, failures } = summary();
