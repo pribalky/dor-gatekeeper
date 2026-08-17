@@ -406,3 +406,17 @@ Fonts are shipped as real `.ttf` files under `assets/fonts/` (own copy per repo,
 **Why:** A prior review flagged "manual entry friction" as a real gap. The honest answer within a zero-backend architecture is pull-based, not a fake webhook listener: a person pastes text they already have (a ticket's description/AC), and the app suggests, never decides. This keeps the same advisory-only, never-fabricate discipline as the AI hazard rules (#32) and the threshold-suggestions banner (#36) — a keyword match is weak, coincidental evidence at best, so the UI treats it as exactly that: a starting point to review, not an answer to trust blind.
 
 **Trade-off:** Simple substring keyword matching will both under- and over-match — a ticket that addresses a concern without using any of the mapped keywords gets no suggestion, and an unrelated mention of a keyword (e.g. "fallback" used in an unrelated sentence) produces a suggestion with weak evidence. Acceptable because nothing is applied without a human reading the evidence snippet first; this is explicitly a friction-reducer, not a certifier.
+
+---
+
+## 40. Accessibility audit — 3 real findings fixed, none required a design compromise
+
+**Decision:** A one-time `axe-core` audit (fetched from the npm registry into a scratch directory for the audit script only — never vendored into this repo, keeping the zero-npm-dependency posture intact) across the checklist, AI tab, Jira tab, and `portal.html` found and fixed 3 issues:
+- `--color-conditional` (`#93711f`, the amber/gold used for CONDITIONAL badges and Med-severity text) measured 4.24:1 against the paper background — just under WCAG AA's 4.5:1 for normal text. Darkened to `#87671c` (4.92:1), same hue, imperceptible visual shift.
+- The generic `button:hover:not(:disabled)` rule (specificity `(0,2,1)`) outranked `.tab-nav button`'s transparent background (`(0,1,1)`), so hovering the *active* tab painted a dark hover background behind its already-dark selected-tab text — contrast dropped to 1.29:1, effectively invisible. A `.tab-nav button:hover:not(:disabled)` override (matching specificity, later in source) restores the transparent background on hover.
+- `portal.html`'s `.portal-shell` wrapper was a `<div>` — no `<main>` landmark existed on the page at all. Changed the element to `<main>`; no CSS change needed since `.portal-shell` was always a class selector.
+- `#jira-copy-block` (the generated ticket-content textarea) had no accessible name — added `aria-label="Generated Jira ticket content"`.
+
+**Why:** Per `CLAUDE.md`-equivalent discipline, accessibility is a stated requirement, not an afterthought. Treated as a one-time, human-reviewed audit (same precedent as the manual `opa eval` verification, #23) rather than a standing CI dependency — axe-core is normally an npm package, and wiring it into CI would reopen the "no npm, ever" question for no real payoff over an occasional manual pass.
+
+**Trade-off:** None of these fixes traded anything away — the color shift is imperceptible, the hover fix restores intended behavior, the landmark/label additions are additive markup only. A clean automated pass is not a full manual WCAG audit (screen-reader walkthroughs, keyboard-only flows beyond what earlier redesigns already verified); flagged honestly as the scope actually covered.
