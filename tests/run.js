@@ -10,6 +10,7 @@ import "./prDriftCheck.test.js";
 import "./deepLink.test.js";
 import "./thresholdSuggestions.test.js";
 import "./escapeHtml.test.js";
+import "./escalationLikelihood.test.js";
 import { summary } from "./assert.js";
 
 const { passCount, failCount, failures } = summary();

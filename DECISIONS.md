@@ -386,3 +386,13 @@ Fonts are shipped as real `.ttf` files under `assets/fonts/` (own copy per repo,
 **Why:** A GitHub PR's changed-file names are attacker-controlled if a user points the drift check at a malicious PR — they were rendered completely unescaped, a real stored/reflected XSS vector. `pillar_name` in the threshold-suggestions banner is defense-in-depth for the same reason: it's read from `dor-recovery-console`'s `dor:reworkSignals`, which is itself derived from a *pasted/uploaded* assessment JSON on that app's side (see that repo's `DECISIONS.md` #34) — content this app has no way to independently verify was actually produced by a trusted `dor-gatekeeper` export. Escaping here closes that path regardless of what's fixed on the writing side.
 
 **Trade-off:** None — this is a straightforward correctness fix with no behavior change for well-formed input.
+
+---
+
+## 38. Escalation Likelihood: a pre-sprint predictive signal, reusing the threshold-suggestions derivation rather than a parallel computation
+
+**Decision:** New `js/engine/escalationLikelihood.js`, `deriveEscalationLikelihood(gaps, signals, minOccurrences = 3)`, calls the existing `deriveThresholdSuggestions()` (#36) unmodified to get "hot" pillars — pillars that have driven ≥3 recent Medium/High rework-risk assessments in `dor-recovery-console` — then counts how many of the *current* assessment's own gaps sit in one of those hot pillars. A small badge next to `#gate-badge` shows the categorical result (0 matches → no claim, badge stays hidden; 1 → `Moderate`; 2+ → `Elevated`), read live on every `recompute()` (not just at page load, since answering a checklist item changes `gaps`) via a `readReworkSignalsSafe()` helper shared with `renderThresholdSuggestions()`.
+
+**Why:** This is the honest, static-only answer to "flag a sprint collapse before the review happens" — instead of a trained predictive model (impossible with zero backend and no training data), it cross-references data this app-family already has: the same pillars the closed loop (#36) already flags as historically risky, against *this specific assessment's* current gaps. Categorical, not an invented score, matching #29's precedent. Advisory only — it never blocks the gate decision or mutates scoring, same discipline as every other suggestion surface in this app.
+
+**Trade-off:** Same single-browser scoping as #36 — this is "based on what this browser has seen," not an org-wide signal. A pillar only becomes "hot" after ≥3 recent Recovery Console loads recorded it, so a fresh browser or a newly-onboarded pillar will show no badge even if the underlying risk is real; that's the honest cost of not fabricating a claim from insufficient data.

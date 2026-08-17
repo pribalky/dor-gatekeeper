@@ -70,7 +70,8 @@ dor-gatekeeper/
 │   │   ├── aiFeasibility.js          # evaluates aiHazardRules.js + derives the feasibility verdict
 │   │   ├── prDriftCheck.js           # classifies a GitHub PR's changed files for schema/contract risk
 │   │   ├── deepLink.js               # pure parseDeepLinkParams(search, hash) for ?sample=&framework=#tab=
-│   │   └── thresholdSuggestions.js   # derives pillar suggestions from dor-recovery-console's shared signals
+│   │   ├── thresholdSuggestions.js   # derives pillar suggestions from dor-recovery-console's shared signals
+│   │   └── escalationLikelihood.js   # pre-sprint escalation signal: current gaps × hot pillars
 │   ├── export/
 │   │   ├── jsonExport.js             # App 2 handoff export (schema_version 1.0/1.1/1.2) + baseline filename
 │   │   ├── markdownExport.js         # human-readable audit report
@@ -94,6 +95,7 @@ dor-gatekeeper/
 │   ├── prDriftCheck.test.js          # file classification + mocked-fetch network path
 │   ├── deepLink.test.js              # deep-link param parsing
 │   ├── thresholdSuggestions.test.js  # suggestion derivation + threshold boundary
+│   ├── escalationLikelihood.test.js  # tier boundaries + no-claim cases
 │   └── run.js                        # runs every *.test.js, exits non-zero on failure
 ├── DECISIONS.md                      # why things are built this way (shared with App 2)
 └── README.md                         # you are here
@@ -138,6 +140,8 @@ dor-gatekeeper/
 - **GitHub PR drift check** — paste a PR's owner/repo/number to flag changed files matching schema/contract patterns. Informational only, not wired into the gate decision. Requires your browser to reach `api.github.com`.
 
 **Cross-app closed-loop tuning** — a dismissible banner, shown when `dor-recovery-console` (same-origin on GitHub Pages) has recorded 3+ recent Medium/High rework-risk signals against the same pillar: *"`{pillar_name}` has driven Medium/High rework risk in {n} recent assessments (via dor-recovery-console) — consider tightening this pillar's checklist or weight."* Read-only via shared `localStorage` (`dor:reworkSignals`) — advisory only, never auto-adjusts `FRAMEWORKS` or item weights (`DECISIONS.md` #36).
+
+**Escalation Likelihood** — a small badge next to the gate decision, live-updating as you answer the checklist: when 1+ of *this assessment's* current gaps sit in a pillar the closed-loop signal above has flagged as historically driving Medium/High rework, shows **Moderate** (1 gap) or **Elevated** (2+) with a tooltip naming the matching pillars — a pre-sprint, same-browser-history heuristic, not a trained prediction (`DECISIONS.md` #38).
 
 **Persona portal & deep-linking** — [`portal.html`](https://pribalky.github.io/dor-gatekeeper/portal.html) routes 3 personas (Squad Engineer/BA, Tech Lead/Architect, CXO/Board) straight into a populated, relevant view of this app or `dor-recovery-console`, via `?sample=&framework=#tab=` deep-link params (`js/engine/deepLink.js`, `DECISIONS.md` #35).
 

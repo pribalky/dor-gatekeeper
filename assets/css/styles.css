@@ -379,6 +379,24 @@ button.secondary {
 .gate-badge.gate-conditional { color: var(--color-conditional); border-color: var(--color-conditional); }
 .gate-badge.gate-blocked { color: var(--color-blocked); border-color: var(--color-blocked); }
 
+.escalation-badge {
+  display: block;
+  margin-top: 0.5rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--color-conditional);
+  border-left-width: 3px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--color-conditional);
+  cursor: help;
+}
+
+.escalation-badge.escalation-elevated { color: var(--color-blocked); border-color: var(--color-blocked); }
+
 .overall-score {
   text-align: center;
   font-family: var(--font-data);

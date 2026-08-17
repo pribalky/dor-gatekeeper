@@ -17,6 +17,7 @@ import {
 import { classifyChangedFiles, fetchPrFiles } from "./engine/prDriftCheck.js";
 import { parseDeepLinkParams } from "./engine/deepLink.js";
 import { deriveThresholdSuggestions } from "./engine/thresholdSuggestions.js";
+import { deriveEscalationLikelihood } from "./engine/escalationLikelihood.js";
 import { escapeHtml } from "./ui/escapeHtml.js";
 import { validateReadyForExport } from "./ui/validation.js";
 import { renderChecklist, onRadioChange, setAnswers, clearAnswers, updateResults, showErrors } from "./ui/render.js";
@@ -31,6 +32,7 @@ const els = {
   checklist: document.getElementById("checklist"),
   scorePanel: document.getElementById("score-panel"),
   gateBadge: document.getElementById("gate-badge"),
+  escalationBadge: document.getElementById("escalation-badge"),
   gapList: document.getElementById("gap-list"),
   actionItems: document.getElementById("action-items"),
   errors: document.getElementById("errors"),
@@ -113,6 +115,7 @@ function recompute() {
     },
   });
   els.jiraCopyBlock.value = buildJiraCopyBlock(state, gaps);
+  renderEscalationBadge(gaps);
   return { scoreResult, gaps };
 }
 
@@ -221,13 +224,31 @@ function onAnswerChange(itemId, value) {
 // try/catch and silently no-ops if storage is unavailable.
 const REWORK_SIGNALS_KEY = "dor:reworkSignals";
 
-function renderThresholdSuggestions() {
-  let signals = [];
+// Shared by renderThresholdSuggestions() (init-time only) and the Escalation
+// Likelihood badge (every recompute(), since answering an item changes gaps).
+// Returns [] on any storage failure — an advisory read must never throw.
+function readReworkSignalsSafe() {
   try {
-    signals = JSON.parse(localStorage.getItem(REWORK_SIGNALS_KEY) || "[]");
+    return JSON.parse(localStorage.getItem(REWORK_SIGNALS_KEY) || "[]");
   } catch {
+    return [];
+  }
+}
+
+function renderEscalationBadge(gaps) {
+  const likelihood = deriveEscalationLikelihood(gaps, readReworkSignalsSafe());
+  if (!likelihood) {
+    els.escalationBadge.hidden = true;
     return;
   }
+  els.escalationBadge.hidden = false;
+  els.escalationBadge.className = `escalation-badge escalation-${likelihood.tier.toLowerCase()}`;
+  els.escalationBadge.textContent = `Escalation Likelihood: ${likelihood.tier}`;
+  els.escalationBadge.title = `Based on ${likelihood.matchingGapCount} of your gaps falling in pillars (${likelihood.matchingPillars.join(", ")}) that have driven Medium/High rework risk in ≥3 recent dor-recovery-console assessments (this browser's history).`;
+}
+
+function renderThresholdSuggestions() {
+  const signals = readReworkSignalsSafe();
 
   const suggestions = deriveThresholdSuggestions(signals);
   if (suggestions.length === 0) return;
