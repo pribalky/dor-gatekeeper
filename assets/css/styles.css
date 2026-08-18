@@ -687,6 +687,18 @@ button.secondary {
   margin-bottom: 1.25rem;
 }
 
+.invisible-governance-panel {
+  margin-bottom: 1.25rem;
+  border-style: dashed;
+  background: var(--color-bg);
+}
+
+.invisible-governance-panel .roadmap-note {
+  margin-bottom: 0;
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--color-conditional);
+}
+
 .ticket-assist-panel textarea {
   width: 100%;
   font-family: var(--font-body);

@@ -460,3 +460,13 @@ Fonts are shipped as real `.ttf` files under `assets/fonts/` (own copy per repo,
 **Why:** Reported a third time as "same problem persists for BA & Architect cards" after #42/#43 — a comprehensive headless-browser sweep of every banner/panel before and after Reset (with realistic accumulated `dor:reworkSignals` seeded, matching what a browser that's exercised the closed-loop feature this session would actually have) found the real remaining offender: the threshold-suggestions banner is a pure read of `dor:reworkSignals`, entirely independent of the loaded checklist/assessment, so nothing about Reset ever touched it — it showed the exact same "Process & Workflow has driven Medium/High rework risk..." text, unchanged, before and after. #42 and #43 were both real, correctly-fixed bugs, but neither was this one — three separate root causes producing the same user-visible symptom class ("a banner that outlives Reset") across three commits.
 
 **Trade-off:** None. Re-verified the full sweep clean end to end: gate badge, Escalation Likelihood badge, threshold-suggestions banner, Ticket-to-Checklist Assist suggestions/input, AI hazard flags/verdict, errors, gap list, Jira copy block, and PR Check fields/result all correctly reset for both the BA and Architect portal flows.
+
+---
+
+## 45. "Invisible Governance" roadmap teaser — a permanently disabled button, not a fake capability
+
+**Decision:** New "Invisible Governance" panel in the Assessment tab, directly below Ticket-to-Checklist Assist: a permanently `disabled` "Set Up Invisible Governance (Passive Jira Ingestion)" button plus a note explicitly stating *"Not yet configured — passive listening needs a backend webhook receiver this static, zero-backend app deliberately doesn't have (`DECISIONS.md` #28). Ticket-to-Checklist Assist above is the honest, pull-based version available today."* Styled with a dashed border to read visually as a roadmap item, not a working panel. No JavaScript wiring at all — the button cannot be enabled or clicked; it is inert by construction, not by a guard clause that could later be bypassed.
+
+**Why:** Requested directly — make the roadmap gap discoverable on the page itself, rather than only in `DECISIONS.md` #28. The risk with any "coming soon" UI is implying a capability exists when it doesn't; the fix is the same one this app has used throughout — say plainly what's missing and why (a backend), and point at the real, working alternative that exists today instead of a vague promise.
+
+**Trade-off:** One more thing to keep honest if the real feature is ever built — the button and its note must be updated together, not left stranded once passive ingestion becomes real.

@@ -61,6 +61,14 @@
             <button id="ticket-assist-suggest-btn" type="button" class="secondary">Suggest Answers</button>
             <div id="ticket-assist-suggestions" class="ticket-assist-suggestions" hidden></div>
           </section>
+
+          <section class="panel invisible-governance-panel">
+            <h2>Invisible Governance</h2>
+            <p class="section-note">The end state: this checklist fills itself in as Jira tickets are written, not after — a passive webhook listener watching Jira in real time.</p>
+            <button type="button" class="secondary" disabled>Set Up Invisible Governance (Passive Jira Ingestion)</button>
+            <p class="section-note roadmap-note">⚠ Not yet configured — passive listening needs a backend webhook receiver this static, zero-backend app deliberately doesn't have (<code>DECISIONS.md</code> #28). <strong>Ticket-to-Checklist Assist</strong> above is the honest, pull-based version available today.</p>
+          </section>
+
           <div id="checklist" class="checklist"></div>
         </div>
 
