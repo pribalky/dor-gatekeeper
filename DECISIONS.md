@@ -512,3 +512,15 @@ Fonts are shipped as real `.ttf` files under `assets/fonts/` (own copy per repo,
 387 tests passing (up from 325).
 
 **Trade-off:** The `dor-recovery-console` half of the test's validation is a hand-maintained mirror, not a live cross-repo check — if that app's sample ids or tab ids change without this list being updated, the test would pass on a stale assumption rather than catching real drift. Acceptable given the zero-build, no-cross-repo-import constraint; flagged here so it's not mistaken for a stronger guarantee than it is.
+
+---
+
+## 50. Persistent "Strategy-to-Execution Control Plane" link in the aside (shared with `dor-recovery-console` #17)
+
+**Decision:** Added a plain `<a href="portal.html" class="secondary">Strategy-to-Execution Control Plane →</a>` as the last item in the aside's `.export-buttons` block, alongside the export buttons. `.export-buttons a` gained its own CSS rule mirroring the existing `button`/`button.secondary` box model (padding, border, radius, font), since no anchor styling previously existed there. Plain static navigation, not a JS-wired button — there's nothing to compute, so no click handler.
+
+**Why:** Confirmed via direct read of `index.html` that the aside never linked to `portal.html` at all before this — the portal was only discoverable if you already knew to start there. `dor-recovery-console` has the identical gap and gets the identical fix (its own `DECISIONS.md` #17, absolute-linked since it's a separate deployment) — this is a shared, cross-referenced decision like #1-#10. Verified via headless browser: the link renders in the aside with the correct text and `portal.html` href, `getComputedStyle(...).display` confirms it renders as a block-level button-styled element (not an unstyled inline link), and clicking it correctly navigates to the portal. Zero console errors.
+
+387 tests passing (unchanged — a static link needs no new test).
+
+**Trade-off:** None — this is additive, static navigation with no behavior to regress.
