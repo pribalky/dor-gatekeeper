@@ -10,6 +10,11 @@ const INTEGRATION_LABEL = {
 };
 const LATENCY_LABEL = { bounded: "Bounded (e.g. <200ms / capped spend)", unbounded: "Unbounded / best-effort" };
 const AGENTIC_LABEL = { none: "None", "read-only-mcp": "Read-Only External API/DB (MCP)", "read-write-mcp": "Read-Write / Mutating (MCP)" };
+const ORCHESTRATION_LABEL = {
+  "single-agent": "Single Agent",
+  "multi-agent-orchestration": "Multi-Agent Orchestration",
+  "recursive-tool-chaining": "Recursive Tool Chaining",
+};
 const MODEL_TIER_LABEL = {
   "deterministic-na": "Deterministic / N/A",
   lightweight: "Lightweight / Low-Latency",
@@ -39,6 +44,7 @@ export function buildAiFeasibilityAdr(inputs, routing, hazards, verdict) {
   lines.push(`- **Integration Target:** ${INTEGRATION_LABEL[inputs.integrationTarget]}`);
   lines.push(`- **Latency & Cost Budget:** ${LATENCY_LABEL[inputs.latencyCostBudget]}`);
   lines.push(`- **Agentic Tool Access:** ${AGENTIC_LABEL[inputs.agenticToolAccess]}`);
+  lines.push(`- **Agent Orchestration:** ${ORCHESTRATION_LABEL[inputs.agentOrchestration]}`);
   lines.push(`- **Model Tier (FinOps):** ${MODEL_TIER_LABEL[inputs.aiModelTier]}`);
   lines.push(`- **Routed Governance Quadrant:** ${routing.label}`);
   lines.push("");
@@ -69,7 +75,7 @@ export function buildAiFeasibilityAdr(inputs, routing, hazards, verdict) {
   } else if (verdict === "PROCEED WITH CONDITIONS") {
     lines.push("- This design may proceed, but only once the Med-severity hazards above (and/or the HITL gate, if flagged) are addressed and tracked.");
   } else {
-    lines.push("- No blocking hazards identified for this configuration. Re-evaluate if any of the 5 inputs above change.");
+    lines.push("- No blocking hazards identified for this configuration. Re-evaluate if any of the inputs above change.");
   }
   lines.push("");
 

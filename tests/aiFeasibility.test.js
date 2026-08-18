@@ -16,6 +16,7 @@ const BASE_INPUTS = {
   integrationTarget: "legacy-batch",
   latencyCostBudget: "bounded",
   agenticToolAccess: "none",
+  agentOrchestration: "single-agent",
   aiModelTier: "deterministic-na",
 };
 
@@ -44,7 +45,7 @@ assertEqual(
   "unbounded latency/cost budget triggers the unbounded-cost rule"
 );
 assertEqual(evaluateHazards(BASE_INPUTS), [], "a clean, low-risk configuration triggers no hazards");
-assertEqual(HAZARD_RULES.length, 7, "sanity: 7 hazard rules are defined");
+assertEqual(HAZARD_RULES.length, 9, "sanity: 9 hazard rules are defined");
 
 // MCP & Agentic Security — declaration + flag, not runtime interception.
 assertEqual(
@@ -66,6 +67,30 @@ assertEqual(
   evaluateHazards({ ...BASE_INPUTS, agenticToolAccess: "none" }),
   [],
   "no agentic tool access triggers no MCP-related hazard"
+);
+
+// Agent Orchestration — blast-radius/recursive-chaining hazards only fire when
+// combined with mutating (read-write) tool access, same declaration-not-interception
+// discipline as the MCP rules above.
+assertEqual(
+  evaluateHazards({ ...BASE_INPUTS, agenticToolAccess: "read-write-mcp", agentOrchestration: "recursive-tool-chaining" }).map((h) => h.id),
+  ["agentic-mutating-mcp-tool-access", "agentic-recursive-chaining-mutating"],
+  "read-write MCP access + recursive tool chaining co-triggers the Confused Deputy rule and the new Recursive Tool Execution Hazard"
+);
+assertEqual(
+  evaluateHazards({ ...BASE_INPUTS, agenticToolAccess: "read-write-mcp", agentOrchestration: "multi-agent-orchestration" }).map((h) => h.id),
+  ["agentic-mutating-mcp-tool-access", "agentic-multi-agent-mutating"],
+  "read-write MCP access + multi-agent orchestration co-triggers the Confused Deputy rule and the new Multi-Agent Blast-Radius Hazard"
+);
+assertEqual(
+  evaluateHazards({ ...BASE_INPUTS, agenticToolAccess: "read-only-mcp", agentOrchestration: "recursive-tool-chaining" }).map((h) => h.id),
+  [],
+  "recursive tool chaining with only read-only access triggers no orchestration hazard (mutating access is required)"
+);
+assertEqual(
+  evaluateHazards({ ...BASE_INPUTS, agenticToolAccess: "read-write-mcp", agentOrchestration: "single-agent" }).map((h) => h.id),
+  ["agentic-mutating-mcp-tool-access"],
+  "a single agent with mutating access triggers only the pre-existing Confused Deputy rule, no orchestration hazard"
 );
 
 // FinOps — Model Tier is the one input that changes the verdict, not just the
@@ -125,6 +150,7 @@ assertTrue(adr.includes(verdict), "ADR Status section includes the verdict");
 assertTrue(adr.includes("Data Leakage Risk"), "ADR Context section includes the triggered hazard flag text");
 assertTrue(adr.includes(routing.guidance), "ADR Decision section includes the routed quadrant's guidance");
 assertTrue(adr.includes("**Model Tier (FinOps):**"), "ADR Context section includes the Model Tier line");
+assertTrue(adr.includes("**Agent Orchestration:**"), "ADR Context section includes the Agent Orchestration line");
 
 // A clean configuration still produces all 4 sections, degrading gracefully.
 const cleanRouting = routeAiDecision("high", "low");

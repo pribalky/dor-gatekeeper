@@ -33,9 +33,12 @@ export const HAZARD_RULES = [
     flag: "Unbounded Cost Risk",
     guidance: "No token/spend ceiling is implied by an unbounded budget. Require a hard cost cap and a circuit breaker before this reaches production traffic.",
   },
-  // MCP & Agentic Security — a declaration + flag, not runtime interception. This app
-  // has no way to observe an actual tool call; it asks the assessor to declare whether
-  // the design does agentic tool-calling and flags the standard hazard if so.
+  // MCP & Agentic Security, and Agent Orchestration below — a declaration + flag, not
+  // runtime interception or real static/dynamic analysis (DECISIONS.md #28 defers
+  // that — it needs a backend this static app deliberately doesn't have). This app has
+  // no way to observe an actual tool call or execution graph; it asks the assessor to
+  // declare the design's tool access and orchestration shape and flags the standard
+  // hazard when they combine.
   {
     id: "agentic-mutating-mcp-tool-access",
     match: { agenticToolAccess: "read-write-mcp" },
@@ -49,6 +52,24 @@ export const HAZARD_RULES = [
     severity: "Med",
     flag: "Unvalidated Tool Output Risk",
     guidance: "An LLM agent consuming external data via MCP, even read-only, should validate/sanitize tool responses before using them in downstream decisions — an untrusted or malformed response can still mislead a low-determinism model.",
+  },
+  // Agent Orchestration — same declaration-not-interception discipline as the two MCP
+  // rules above. This app has no way to observe an actual agent's execution graph; it
+  // asks the assessor to declare the orchestration shape and flags the standard hazard
+  // when that shape is combined with mutating (read-write) tool access.
+  {
+    id: "agentic-recursive-chaining-mutating",
+    match: { agenticToolAccess: "read-write-mcp", agentOrchestration: "recursive-tool-chaining" },
+    severity: "High",
+    flag: "Recursive Tool Execution Hazard",
+    guidance: "Recursive tool chaining with mutating access means each hop compounds what one poisoned or malicious tool response can reach. Require a hard step/depth ceiling and a kill-switch that can halt the chain mid-execution.",
+  },
+  {
+    id: "agentic-multi-agent-mutating",
+    match: { agenticToolAccess: "read-write-mcp", agentOrchestration: "multi-agent-orchestration" },
+    severity: "High",
+    flag: "Multi-Agent Blast-Radius Hazard",
+    guidance: "Multiple agents with mutating access widens the blast radius of any single compromised or misbehaving agent. Require least-privilege credential scoping per agent and one accountable human-in-the-loop approval point spanning all agents — never per-agent approval that can be individually bypassed.",
   },
   // FinOps — the one place the Model Tier input changes the verdict rather than just
   // informing the reference table below it.

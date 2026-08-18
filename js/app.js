@@ -60,6 +60,7 @@ const els = {
   aiIntegrationTarget: document.getElementById("ai-integration-target"),
   aiLatencyBudget: document.getElementById("ai-latency-budget"),
   aiAgenticToolAccess: document.getElementById("ai-agentic-tool-access"),
+  aiAgentOrchestration: document.getElementById("ai-agent-orchestration"),
   aiModelTier: document.getElementById("ai-model-tier"),
   aiRoutingResult: document.getElementById("ai-routing-result"),
   aiHazardFlags: document.getElementById("ai-hazard-flags"),
@@ -135,6 +136,7 @@ function currentAiInputs() {
     integrationTarget: els.aiIntegrationTarget.value,
     latencyCostBudget: els.aiLatencyBudget.value,
     agenticToolAccess: els.aiAgenticToolAccess.value,
+    agentOrchestration: els.aiAgentOrchestration.value,
     aiModelTier: els.aiModelTier.value,
   };
 }
@@ -444,7 +446,7 @@ function init() {
     // standalone tools, decoupled from the checklist (DECISIONS.md) — Reset must
     // clear them too, not just the checklist, or a hazard/verdict banner set while
     // exploring the router stays stranded on screen after a "fresh start" click.
-    [els.aiDeterminism, els.aiComplexity, els.aiDataSensitivity, els.aiIntegrationTarget, els.aiLatencyBudget, els.aiAgenticToolAccess, els.aiModelTier].forEach(
+    [els.aiDeterminism, els.aiComplexity, els.aiDataSensitivity, els.aiIntegrationTarget, els.aiLatencyBudget, els.aiAgenticToolAccess, els.aiAgentOrchestration, els.aiModelTier].forEach(
       (select) => (select.selectedIndex = 0)
     );
     renderAiGovernanceAndFeasibility();
@@ -520,6 +522,7 @@ function init() {
   els.aiIntegrationTarget.addEventListener("change", renderAiGovernanceAndFeasibility);
   els.aiLatencyBudget.addEventListener("change", renderAiGovernanceAndFeasibility);
   els.aiAgenticToolAccess.addEventListener("change", renderAiGovernanceAndFeasibility);
+  els.aiAgentOrchestration.addEventListener("change", renderAiGovernanceAndFeasibility);
   els.aiModelTier.addEventListener("change", renderAiGovernanceAndFeasibility);
 
   els.exportAiFeasibilityAdrBtn.addEventListener("click", () => {
