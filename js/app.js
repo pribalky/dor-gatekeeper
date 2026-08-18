@@ -410,6 +410,21 @@ function init() {
     refreshMeta();
     recompute();
     refreshErrorsAndButtons();
+
+    // The AI Governance & Feasibility router and the GitHub PR Check are both
+    // standalone tools, decoupled from the checklist (DECISIONS.md) — Reset must
+    // clear them too, not just the checklist, or a hazard/verdict banner set while
+    // exploring the router stays stranded on screen after a "fresh start" click.
+    [els.aiDeterminism, els.aiComplexity, els.aiDataSensitivity, els.aiIntegrationTarget, els.aiLatencyBudget, els.aiAgenticToolAccess].forEach(
+      (select) => (select.selectedIndex = 0)
+    );
+    renderAiGovernanceAndFeasibility();
+
+    els.prOwner.value = "";
+    els.prRepo.value = "";
+    els.prNumber.value = "";
+    els.prToken.value = "";
+    els.prDriftResult.innerHTML = "";
   });
 
   els.exportJsonBtn.addEventListener("click", () => {

@@ -440,3 +440,13 @@ Fonts are shipped as real `.ttf` files under `assets/fonts/` (own copy per repo,
 **Why:** Reported directly — a stale "Escalation Likelihood: Elevated" banner stayed visible after Reset when arriving via the portal's BA persona card (which loads a sample with real cross-app `dor:reworkSignals` history). Reproduced with a headless-browser check of `getComputedStyle(...).display` before/after the CSS fix (`block` → `none`) and `Playwright.isVisible()` (`true` → `false`), not just the DOM attribute, since the attribute was never actually the broken part.
 
 **Trade-off:** None — this is a straightforward correctness fix. Worth noting as a pattern to watch for: any future toggled-via-`hidden` element must not set `display` unconditionally in its own class rule without a matching `[hidden]` override, or it silently repeats this bug.
+
+---
+
+## 43. Fix: Reset didn't clear the AI Governance & Feasibility router or the GitHub PR Check
+
+**Decision:** `resetBtn`'s click handler only ever reset the checklist itself — the 6 AI router selects (determinism, complexity, data sensitivity, integration target, latency/cost budget, agentic tool access) and the 4 PR Check fields (owner, repo, number, token) were never touched, so their rendered output (hazard flags, feasibility verdict, PR drift result) stayed on screen exactly as last computed. Reset now sets all 6 AI selects back to `selectedIndex = 0` (their safe defaults: Deterministic Script / High complexity / Public / Legacy Monolith-Batch / Bounded / None) and calls `renderAiGovernanceAndFeasibility()`, and clears the 4 PR Check fields plus `#pr-drift-result`.
+
+**Why:** Reported directly, immediately after #42 — the same "banner survives Reset" symptom on the portal's Architect persona card, which lands on the AI tab. Root cause is different from #42 (missing behavior, not a CSS bug): these two standalone tools (`DECISIONS.md` #26, #32) were added to the app after the original Reset handler was written, and neither got wired in. Reproduced by setting the router to a real `RECONSIDER APPROACH` hazard combination (Low determinism / Regulated data / External LLM API), confirming the verdict and hazard text survived Reset unchanged before the fix, and correctly reverted to `PROCEED` / "No hazards flagged" / default select values after it. Same headless-browser verification for the PR Check fields.
+
+**Trade-off:** None — Reset already exists specifically to return the whole page to a fresh-start state; these two panels were simply missing from what it actually reset.
