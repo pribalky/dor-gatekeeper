@@ -779,3 +779,24 @@ thead th {
   background: var(--color-surface-2);
   font-weight: 700;
 }
+
+.owasp-coverage-list {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.owasp-coverage-list li {
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
+}
+
+.owasp-coverage-list .owasp-covered {
+  color: var(--color-approved);
+}
+
+.owasp-coverage-list .owasp-uncovered {
+  color: var(--color-text-muted);
+}

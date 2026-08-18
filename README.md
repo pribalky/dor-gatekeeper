@@ -64,6 +64,7 @@ dor-gatekeeper/
 │   │   ├── edgeCaseMap.js            # category_tag → edge-case test prompt (used by jiraExport.js)
 │   │   ├── aiHazardRules.js          # declarative { match, severity, flag, guidance } hazard rules
 │   │   ├── tcoModel.js               # illustrative $/1K-token + latency reference bands per model tier
+│   │   ├── owaspNistMap.js           # hazard-rule id → OWASP LLM Top 10 (2023) + NIST AI RMF 1.0 mapping
 │   │   ├── checklistKeywordMap.js    # category_tag → keywords a pasted ticket might already cover
 │   │   └── sampleTicketText.js       # feature_name → demo ticket text for Ticket-to-Checklist Assist
 │   ├── engine/
@@ -103,6 +104,7 @@ dor-gatekeeper/
 │   ├── ticketAssist.test.js          # keyword matching, never a negative claim
 │   ├── sampleTicketText.test.js      # every sample has a matching demo text
 │   ├── tcoModel.test.js              # all 4 tiers defined, cost bands ascend, tcoForTier lookups
+│   ├── owaspNistMap.test.js          # every hazard rule mapped, valid ids, honest coverage gaps
 │   └── run.js                        # runs every *.test.js, exits non-zero on failure
 ├── DECISIONS.md                      # why things are built this way (shared with App 2)
 └── README.md                         # you are here
@@ -147,6 +149,7 @@ dor-gatekeeper/
 **Standalone tools** (decoupled from the checklist — usable independently)
 - **AI Governance & Feasibility Router** — a 2×2 lookup (Determinism × Process Complexity) returns a governance quadrant + HITL guidance; 6 more inputs (Data Sensitivity, Integration Target, Latency & Cost Budget, Agentic Tool Access, Agent Orchestration, Model Tier) run against a declarative hazard-rule table (OWASP LLM-style flags, e.g. regulated data + an external LLM API → Data Leakage Risk; mutating MCP tool access → Confused Deputy / Tool Poisoning Hazard, `DECISIONS.md` #32; recursive tool chaining or multi-agent orchestration with mutating access → Recursive Tool Execution Hazard / Multi-Agent Blast-Radius Hazard, `DECISIONS.md` #47; a frontier/reasoning-tier model on a bounded latency/cost budget → Latency/Cost Tier Mismatch, `DECISIONS.md` #46) to produce a categorical feasibility verdict — **PROCEED** / **PROCEED WITH CONDITIONS** / **RECONSIDER APPROACH**, never an invented percentage score. All agentic hazards are self-reported declarations, not runtime interception — this static app has no way to observe an actual tool call or execution graph (`DECISIONS.md` #28). One-click **Export ADR + Policy Bundle** turns the inputs, quadrant, and any triggered flags into an ADR plus a small Rego snippet that denies on `RECONSIDER APPROACH`.
 - **FinOps / Token Economics Reference** — a 4-tier ($/1K tokens + latency band) reference table on the AI tab, order-of-magnitude bands only, explicitly labeled illustrative (not real provider pricing, same posture as `costModel.js` in `dor-recovery-console`). The currently-selected Model Tier is highlighted; picking Frontier/Reasoning under a bounded latency/cost budget also triggers the new Latency/Cost Tier Mismatch hazard above (`DECISIONS.md` #46).
+- **OWASP LLM Top 10 / NIST AI RMF Coverage** — a reference panel on the AI tab mapping each triggered hazard to its OWASP Top 10 for LLM Applications (2023 edition) category and NIST AI RMF 1.0 function(s), plus a full 10-category OWASP list showing which are and aren't touched by any rule in this app today (e.g. LLM03 Training Data Poisoning is honestly shown as not covered — this is a static intake, not a training pipeline). Reviewed once against the published standards; a coverage reference, not a live or certified compliance feed (`DECISIONS.md` #48).
 - **GitHub PR drift check** — paste a PR's owner/repo/number to flag changed files matching schema/contract patterns. Informational only, not wired into the gate decision. Requires your browser to reach `api.github.com`.
 
 **Cross-app closed-loop tuning** — a dismissible banner, shown when `dor-recovery-console` (same-origin on GitHub Pages) has recorded 3+ recent Medium/High rework-risk signals against the same pillar: *"`{pillar_name}` has driven Medium/High rework risk in {n} recent assessments (via dor-recovery-console) — consider tightening this pillar's checklist or weight."* Read-only via shared `localStorage` (`dor:reworkSignals`) — advisory only, never auto-adjusts `FRAMEWORKS` or item weights (`DECISIONS.md` #36).

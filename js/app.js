@@ -9,6 +9,7 @@ import { buildChecklistAdr, exportFilenameChecklistAdr } from "./export/checklis
 import { routeAiDecision } from "./engine/aiRouting.js";
 import { evaluateHazards, deriveFeasibilityVerdict } from "./engine/aiFeasibility.js";
 import { MODEL_TIER_TCO } from "./config/tcoModel.js";
+import { frameworkForHazard, owaspCoverage, NIST_RMF_FUNCTIONS } from "./config/owaspNistMap.js";
 import {
   buildAiFeasibilityAdr,
   exportFilenameAiFeasibilityAdr,
@@ -64,6 +65,7 @@ const els = {
   aiModelTier: document.getElementById("ai-model-tier"),
   aiRoutingResult: document.getElementById("ai-routing-result"),
   aiHazardFlags: document.getElementById("ai-hazard-flags"),
+  owaspNistCoverage: document.getElementById("owasp-nist-coverage"),
   aiFeasibilityVerdict: document.getElementById("ai-feasibility-verdict"),
   tcoReferenceTable: document.getElementById("tco-reference-table"),
   exportAiFeasibilityAdrBtn: document.getElementById("export-ai-feasibility-adr-btn"),
@@ -164,6 +166,39 @@ function renderTcoReferenceTable(selectedTier) {
   `;
 }
 
+function renderOwaspNistCoverage(hazards) {
+  const triggeredRows = hazards
+    .map((h) => {
+      const mapping = frameworkForHazard(h.id);
+      return mapping
+        ? `<tr><td>${h.flag}</td><td>${mapping.owasp.join(", ")}</td><td>${mapping.nist.join(", ")}</td></tr>`
+        : `<tr><td>${h.flag}</td><td colspan="2">Not yet mapped</td></tr>`;
+    })
+    .join("");
+
+  const coverage = owaspCoverage();
+  const coverageList = coverage
+    .map((cat) => `<li class="${cat.covered ? "owasp-covered" : "owasp-uncovered"}">${cat.id} ${cat.name}${cat.covered ? "" : " — not covered by any rule here"}</li>`)
+    .join("");
+
+  els.owaspNistCoverage.innerHTML = `
+    <h4>Triggered Hazards — Standards Mapping</h4>
+    ${
+      hazards.length
+        ? `<div class="table-scroll">
+            <table class="remediation-table">
+              <thead><tr><th>Hazard</th><th>OWASP LLM (2023)</th><th>NIST AI RMF 1.0</th></tr></thead>
+              <tbody>${triggeredRows}</tbody>
+            </table>
+          </div>`
+        : `<p class="empty">No hazards flagged for this configuration, so nothing to map.</p>`
+    }
+    <h4>OWASP Top 10 for LLM Applications (2023) — Coverage in This App</h4>
+    <ul class="owasp-coverage-list">${coverageList}</ul>
+    <p class="section-note">NIST AI RMF 1.0 functions this app's hazard rules touch today: ${NIST_RMF_FUNCTIONS.join(", ")}. A coverage reference only, reviewed once against the published standards — not a live or certified compliance feed, and not a claim that every applicable OWASP/NIST concern is covered by a static intake form.</p>
+  `;
+}
+
 const VERDICT_CLASS = {
   "PROCEED": "verdict-proceed",
   "PROCEED WITH CONDITIONS": "verdict-conditions",
@@ -189,6 +224,7 @@ function renderAiGovernanceAndFeasibility() {
   els.aiFeasibilityVerdict.innerHTML = `<span class="feasibility-verdict ${VERDICT_CLASS[verdict]}">${verdict}</span>`;
 
   renderTcoReferenceTable(inputs.aiModelTier);
+  renderOwaspNistCoverage(hazards);
 
   return { inputs, routing, hazards, verdict };
 }
