@@ -450,3 +450,13 @@ Fonts are shipped as real `.ttf` files under `assets/fonts/` (own copy per repo,
 **Why:** Reported directly, immediately after #42 — the same "banner survives Reset" symptom on the portal's Architect persona card, which lands on the AI tab. Root cause is different from #42 (missing behavior, not a CSS bug): these two standalone tools (`DECISIONS.md` #26, #32) were added to the app after the original Reset handler was written, and neither got wired in. Reproduced by setting the router to a real `RECONSIDER APPROACH` hazard combination (Low determinism / Regulated data / External LLM API), confirming the verdict and hazard text survived Reset unchanged before the fix, and correctly reverted to `PROCEED` / "No hazards flagged" / default select values after it. Same headless-browser verification for the PR Check fields.
 
 **Trade-off:** None — Reset already exists specifically to return the whole page to a fresh-start state; these two panels were simply missing from what it actually reset.
+
+---
+
+## 44. Fix: Reset didn't clear the threshold-suggestions banner either
+
+**Decision:** Reset now also sets `els.thresholdSuggestions.hidden = true` and clears its `innerHTML`, the same wholesale dismissal its own per-suggestion "Dismiss" button eventually reaches once every suggestion is individually removed.
+
+**Why:** Reported a third time as "same problem persists for BA & Architect cards" after #42/#43 — a comprehensive headless-browser sweep of every banner/panel before and after Reset (with realistic accumulated `dor:reworkSignals` seeded, matching what a browser that's exercised the closed-loop feature this session would actually have) found the real remaining offender: the threshold-suggestions banner is a pure read of `dor:reworkSignals`, entirely independent of the loaded checklist/assessment, so nothing about Reset ever touched it — it showed the exact same "Process & Workflow has driven Medium/High rework risk..." text, unchanged, before and after. #42 and #43 were both real, correctly-fixed bugs, but neither was this one — three separate root causes producing the same user-visible symptom class ("a banner that outlives Reset") across three commits.
+
+**Trade-off:** None. Re-verified the full sweep clean end to end: gate badge, Escalation Likelihood badge, threshold-suggestions banner, Ticket-to-Checklist Assist suggestions/input, AI hazard flags/verdict, errors, gap list, Jira copy block, and PR Check fields/result all correctly reset for both the BA and Architect portal flows.

@@ -425,6 +425,15 @@ function init() {
     els.prNumber.value = "";
     els.prToken.value = "";
     els.prDriftResult.innerHTML = "";
+
+    // The threshold-suggestions banner is a session-scoped, dismissible advisory —
+    // it's independent of the loaded assessment (a read of dor:reworkSignals, not
+    // gated by the current checklist), so re-deriving it after reset would show the
+    // exact same content unchanged. Reset means "start completely fresh," so it
+    // dismisses this the same way its own per-suggestion Dismiss button eventually
+    // does, rather than leaving it stranded on screen.
+    els.thresholdSuggestions.hidden = true;
+    els.thresholdSuggestions.innerHTML = "";
   });
 
   els.exportJsonBtn.addEventListener("click", () => {
