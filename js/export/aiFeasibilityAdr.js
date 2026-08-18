@@ -10,6 +10,12 @@ const INTEGRATION_LABEL = {
 };
 const LATENCY_LABEL = { bounded: "Bounded (e.g. <200ms / capped spend)", unbounded: "Unbounded / best-effort" };
 const AGENTIC_LABEL = { none: "None", "read-only-mcp": "Read-Only External API/DB (MCP)", "read-write-mcp": "Read-Write / Mutating (MCP)" };
+const MODEL_TIER_LABEL = {
+  "deterministic-na": "Deterministic / N/A",
+  lightweight: "Lightweight / Low-Latency",
+  "mid-tier": "Mid-Tier",
+  "frontier-reasoning": "Frontier / Reasoning",
+};
 
 // Standard ADR sections, populated from the AI Governance & Feasibility Router's
 // intake, the routed quadrant (routeAiDecision — reused, not re-derived), and every
@@ -33,6 +39,7 @@ export function buildAiFeasibilityAdr(inputs, routing, hazards, verdict) {
   lines.push(`- **Integration Target:** ${INTEGRATION_LABEL[inputs.integrationTarget]}`);
   lines.push(`- **Latency & Cost Budget:** ${LATENCY_LABEL[inputs.latencyCostBudget]}`);
   lines.push(`- **Agentic Tool Access:** ${AGENTIC_LABEL[inputs.agenticToolAccess]}`);
+  lines.push(`- **Model Tier (FinOps):** ${MODEL_TIER_LABEL[inputs.aiModelTier]}`);
   lines.push(`- **Routed Governance Quadrant:** ${routing.label}`);
   lines.push("");
   if (hazards.length > 0) {

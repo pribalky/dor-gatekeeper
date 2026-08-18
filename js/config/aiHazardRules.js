@@ -50,4 +50,13 @@ export const HAZARD_RULES = [
     flag: "Unvalidated Tool Output Risk",
     guidance: "An LLM agent consuming external data via MCP, even read-only, should validate/sanitize tool responses before using them in downstream decisions — an untrusted or malformed response can still mislead a low-determinism model.",
   },
+  // FinOps — the one place the Model Tier input changes the verdict rather than just
+  // informing the reference table below it.
+  {
+    id: "frontier-reasoning-bounded-latency",
+    match: { aiModelTier: "frontier-reasoning", latencyCostBudget: "bounded" },
+    severity: "Med",
+    flag: "Latency/Cost Tier Mismatch",
+    guidance: "A frontier/reasoning-tier model rarely holds a tight bounded-latency budget, and its per-token cost is the highest of any tier. Route to a lighter model tier, or relax the latency/cost budget and add a hard timeout.",
+  },
 ];

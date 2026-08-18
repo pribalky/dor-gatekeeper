@@ -16,6 +16,7 @@ const BASE_INPUTS = {
   integrationTarget: "legacy-batch",
   latencyCostBudget: "bounded",
   agenticToolAccess: "none",
+  aiModelTier: "deterministic-na",
 };
 
 // Each rule triggers independently and doesn't fire on non-matching inputs.
@@ -43,7 +44,7 @@ assertEqual(
   "unbounded latency/cost budget triggers the unbounded-cost rule"
 );
 assertEqual(evaluateHazards(BASE_INPUTS), [], "a clean, low-risk configuration triggers no hazards");
-assertEqual(HAZARD_RULES.length, 6, "sanity: 6 hazard rules are defined");
+assertEqual(HAZARD_RULES.length, 7, "sanity: 7 hazard rules are defined");
 
 // MCP & Agentic Security — declaration + flag, not runtime interception.
 assertEqual(
@@ -65,6 +66,24 @@ assertEqual(
   evaluateHazards({ ...BASE_INPUTS, agenticToolAccess: "none" }),
   [],
   "no agentic tool access triggers no MCP-related hazard"
+);
+
+// FinOps — Model Tier is the one input that changes the verdict, not just the
+// reference table.
+assertEqual(
+  evaluateHazards({ ...BASE_INPUTS, aiModelTier: "frontier-reasoning", latencyCostBudget: "bounded" }).map((h) => h.id),
+  ["frontier-reasoning-bounded-latency"],
+  "frontier/reasoning tier + bounded latency/cost budget triggers the tier-mismatch rule"
+);
+assertEqual(
+  evaluateHazards({ ...BASE_INPUTS, aiModelTier: "frontier-reasoning", latencyCostBudget: "unbounded" }).map((h) => h.id),
+  ["unbounded-cost-budget"],
+  "frontier/reasoning tier with an unbounded budget doesn't trigger the tier-mismatch rule (only the pre-existing unbounded-cost rule)"
+);
+assertEqual(
+  evaluateHazards({ ...BASE_INPUTS, aiModelTier: "lightweight", latencyCostBudget: "bounded" }),
+  [],
+  "a lightweight tier with a bounded budget triggers no FinOps hazard"
 );
 
 // Two rules can co-trigger (regulated + external LLM + unbounded budget).
@@ -105,6 +124,7 @@ assertTrue(adr.includes("## Consequences"), "ADR includes the Consequences secti
 assertTrue(adr.includes(verdict), "ADR Status section includes the verdict");
 assertTrue(adr.includes("Data Leakage Risk"), "ADR Context section includes the triggered hazard flag text");
 assertTrue(adr.includes(routing.guidance), "ADR Decision section includes the routed quadrant's guidance");
+assertTrue(adr.includes("**Model Tier (FinOps):**"), "ADR Context section includes the Model Tier line");
 
 // A clean configuration still produces all 4 sections, degrading gracefully.
 const cleanRouting = routeAiDecision("high", "low");

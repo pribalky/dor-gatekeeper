@@ -146,10 +146,24 @@
                   <option value="read-write-mcp">Read-Write / Mutating (MCP)</option>
                 </select>
               </div>
+              <div class="field">
+                <label for="ai-model-tier">Model Tier (FinOps)</label>
+                <select id="ai-model-tier">
+                  <option value="deterministic-na">Deterministic / N/A</option>
+                  <option value="lightweight">Lightweight / Low-Latency</option>
+                  <option value="mid-tier">Mid-Tier</option>
+                  <option value="frontier-reasoning">Frontier / Reasoning</option>
+                </select>
+              </div>
             </div>
             <div id="ai-routing-result" class="ai-routing-result"></div>
             <div id="ai-hazard-flags" class="ai-hazard-flags"></div>
             <div id="ai-feasibility-verdict" class="ai-feasibility-verdict"></div>
+
+            <h3>FinOps / Token Economics Reference <span class="illustrative-tag">(Illustrative)</span></h3>
+            <p class="section-note">Order-of-magnitude reference bands, not real provider pricing — verify against your provider's current published pricing before using in a real business case.</p>
+            <div id="tco-reference-table"></div>
+
             <div class="export-buttons">
               <button id="export-ai-feasibility-adr-btn" type="button">Export ADR + Policy Bundle</button>
             </div>

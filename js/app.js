@@ -8,6 +8,7 @@ import { buildJiraCopyBlock, exportFilenameJiraTxt } from "./export/jiraExport.j
 import { buildChecklistAdr, exportFilenameChecklistAdr } from "./export/checklistAdr.js";
 import { routeAiDecision } from "./engine/aiRouting.js";
 import { evaluateHazards, deriveFeasibilityVerdict } from "./engine/aiFeasibility.js";
+import { MODEL_TIER_TCO } from "./config/tcoModel.js";
 import {
   buildAiFeasibilityAdr,
   exportFilenameAiFeasibilityAdr,
@@ -59,9 +60,11 @@ const els = {
   aiIntegrationTarget: document.getElementById("ai-integration-target"),
   aiLatencyBudget: document.getElementById("ai-latency-budget"),
   aiAgenticToolAccess: document.getElementById("ai-agentic-tool-access"),
+  aiModelTier: document.getElementById("ai-model-tier"),
   aiRoutingResult: document.getElementById("ai-routing-result"),
   aiHazardFlags: document.getElementById("ai-hazard-flags"),
   aiFeasibilityVerdict: document.getElementById("ai-feasibility-verdict"),
+  tcoReferenceTable: document.getElementById("tco-reference-table"),
   exportAiFeasibilityAdrBtn: document.getElementById("export-ai-feasibility-adr-btn"),
   prOwner: document.getElementById("pr-owner"),
   prRepo: document.getElementById("pr-repo"),
@@ -132,7 +135,31 @@ function currentAiInputs() {
     integrationTarget: els.aiIntegrationTarget.value,
     latencyCostBudget: els.aiLatencyBudget.value,
     agenticToolAccess: els.aiAgenticToolAccess.value,
+    aiModelTier: els.aiModelTier.value,
   };
+}
+
+function renderTcoReferenceTable(selectedTier) {
+  const rows = Object.entries(MODEL_TIER_TCO)
+    .map(
+      ([tier, t]) => `
+      <tr class="${tier === selectedTier ? "tco-row-selected" : ""}">
+        <td>${t.label}</td>
+        <td>$${t.illustrativeCostPer1kTokensUsd.low.toFixed(4)}–$${t.illustrativeCostPer1kTokensUsd.high.toFixed(4)}</td>
+        <td>${t.illustrativeLatencyBand}</td>
+        <td>${t.whenToUse}</td>
+      </tr>`
+    )
+    .join("");
+
+  els.tcoReferenceTable.innerHTML = `
+    <div class="table-scroll">
+      <table class="remediation-table">
+        <thead><tr><th>Tier</th><th>$ / 1K Tokens (illustrative)</th><th>Latency Band</th><th>When to Use</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
 }
 
 const VERDICT_CLASS = {
@@ -158,6 +185,8 @@ function renderAiGovernanceAndFeasibility() {
     : `<p class="empty">No hazards flagged for this configuration.</p>`;
 
   els.aiFeasibilityVerdict.innerHTML = `<span class="feasibility-verdict ${VERDICT_CLASS[verdict]}">${verdict}</span>`;
+
+  renderTcoReferenceTable(inputs.aiModelTier);
 
   return { inputs, routing, hazards, verdict };
 }
@@ -415,7 +444,7 @@ function init() {
     // standalone tools, decoupled from the checklist (DECISIONS.md) — Reset must
     // clear them too, not just the checklist, or a hazard/verdict banner set while
     // exploring the router stays stranded on screen after a "fresh start" click.
-    [els.aiDeterminism, els.aiComplexity, els.aiDataSensitivity, els.aiIntegrationTarget, els.aiLatencyBudget, els.aiAgenticToolAccess].forEach(
+    [els.aiDeterminism, els.aiComplexity, els.aiDataSensitivity, els.aiIntegrationTarget, els.aiLatencyBudget, els.aiAgenticToolAccess, els.aiModelTier].forEach(
       (select) => (select.selectedIndex = 0)
     );
     renderAiGovernanceAndFeasibility();
@@ -491,6 +520,7 @@ function init() {
   els.aiIntegrationTarget.addEventListener("change", renderAiGovernanceAndFeasibility);
   els.aiLatencyBudget.addEventListener("change", renderAiGovernanceAndFeasibility);
   els.aiAgenticToolAccess.addEventListener("change", renderAiGovernanceAndFeasibility);
+  els.aiModelTier.addEventListener("change", renderAiGovernanceAndFeasibility);
 
   els.exportAiFeasibilityAdrBtn.addEventListener("click", () => {
     const { inputs, routing, hazards, verdict } = renderAiGovernanceAndFeasibility();

@@ -737,3 +737,45 @@ button.secondary {
   padding: 0.15rem 0.6rem;
   font-size: 0.75rem;
 }
+
+/* Generic reference-table styling — this app had no data tables before the
+   FinOps/OWASP reference panels; mirrors dor-recovery-console's own generic
+   table/th/td rules (independent copy, per DECISIONS.md #1-2 decoupling). */
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-top: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+thead th {
+  border-top: none;
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+}
+
+.illustrative-tag {
+  color: var(--color-text-muted);
+  font-weight: 400;
+  font-size: 0.75rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.tco-row-selected {
+  background: var(--color-surface-2);
+  font-weight: 700;
+}
