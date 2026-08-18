@@ -70,6 +70,54 @@
       color: var(--color-text-muted);
       font-size: 0.85rem;
     }
+
+    .portal-navigator {
+      margin-top: 3rem;
+    }
+
+    .portal-navigator h2 {
+      font-size: 1.25rem;
+      margin: 0 0 0.5rem;
+    }
+
+    .portal-navigator .section-note {
+      margin: 0 0 1rem;
+    }
+
+    .navigator-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .navigator-table th {
+      text-align: left;
+    }
+
+    .navigator-table td,
+    .navigator-table th {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: top;
+    }
+
+    .navigator-table td:first-child {
+      color: var(--color-text-muted);
+    }
+
+    .navigator-table a {
+      color: var(--color-primary);
+      white-space: nowrap;
+    }
+
+    .navigator-row-roadmap td {
+      color: var(--color-text-muted);
+    }
+
+    .navigator-roadmap-tag {
+      font-size: 0.75rem;
+      border: 1px dashed var(--color-border);
+      padding: 0.1rem 0.4rem;
+    }
   </style>
 </head>
 <body>
@@ -106,9 +154,40 @@
       </section>
     </div>
 
+    <section class="portal-navigator">
+      <h2>Problem → Solution Navigator</h2>
+      <p class="section-note">A director-level reference: which concern is solved where, with a direct link. Every row below points at a real, already-shipped feature — the one exception (marked Roadmap) is honestly labeled as not yet configured, never a working-looking link.</p>
+      <table class="navigator-table" id="navigator-table">
+        <thead><tr><th>Director-Level Concern</th><th>Where It's Solved</th><th></th></tr></thead>
+        <tbody id="navigator-table-body"></tbody>
+      </table>
+    </section>
+
     <p class="portal-footer">
       Fully static, zero-backend, zero-maintenance — both apps deploy straight to GitHub Pages. See each app's own <code>README.md</code>/<code>DECISIONS.md</code> for the full architecture and what's deliberately out of scope (passive webhooks, cross-user closed-loop tuning, and real code profiling all require a backend this project doesn't have).
     </p>
   </main>
+
+  <script type="module">
+    import { CONCERN_NAVIGATOR } from "./js/config/concernNavigatorMap.js";
+
+    const tbody = document.getElementById("navigator-table-body");
+    tbody.innerHTML = CONCERN_NAVIGATOR.map((row) => {
+      if (row.status === "roadmap") {
+        return `
+          <tr class="navigator-row-roadmap">
+            <td>${row.concern}</td>
+            <td>${row.feature} <span class="navigator-roadmap-tag">Roadmap</span><br />${row.note}</td>
+            <td></td>
+          </tr>`;
+      }
+      return `
+        <tr>
+          <td>${row.concern}</td>
+          <td>${row.feature}</td>
+          <td><a href="${row.url}">Open →</a></td>
+        </tr>`;
+    }).join("");
+  </script>
 </body>
 </html>

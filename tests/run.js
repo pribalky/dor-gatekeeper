@@ -15,6 +15,7 @@ import "./ticketAssist.test.js";
 import "./sampleTicketText.test.js";
 import "./tcoModel.test.js";
 import "./owaspNistMap.test.js";
+import "./concernNavigatorMap.test.js";
 import { summary } from "./assert.js";
 
 const { passCount, failCount, failures } = summary();

@@ -65,6 +65,7 @@ dor-gatekeeper/
 │   │   ├── aiHazardRules.js          # declarative { match, severity, flag, guidance } hazard rules
 │   │   ├── tcoModel.js               # illustrative $/1K-token + latency reference bands per model tier
 │   │   ├── owaspNistMap.js           # hazard-rule id → OWASP LLM Top 10 (2023) + NIST AI RMF 1.0 mapping
+│   │   ├── concernNavigatorMap.js    # portal.html's problem→solution navigator rows
 │   │   ├── checklistKeywordMap.js    # category_tag → keywords a pasted ticket might already cover
 │   │   └── sampleTicketText.js       # feature_name → demo ticket text for Ticket-to-Checklist Assist
 │   ├── engine/
@@ -105,6 +106,7 @@ dor-gatekeeper/
 │   ├── sampleTicketText.test.js      # every sample has a matching demo text
 │   ├── tcoModel.test.js              # all 4 tiers defined, cost bands ascend, tcoForTier lookups
 │   ├── owaspNistMap.test.js          # every hazard rule mapped, valid ids, honest coverage gaps
+│   ├── concernNavigatorMap.test.js   # every non-roadmap navigator url resolves to a real sample/tab
 │   └── run.js                        # runs every *.test.js, exits non-zero on failure
 ├── DECISIONS.md                      # why things are built this way (shared with App 2)
 └── README.md                         # you are here
@@ -156,7 +158,7 @@ dor-gatekeeper/
 
 **Escalation Likelihood** — a small badge next to the gate decision, live-updating as you answer the checklist: when 1+ of *this assessment's* current gaps sit in a pillar the closed-loop signal above has flagged as historically driving Medium/High rework, shows **Moderate** (1 gap) or **Elevated** (2+) with a tooltip naming the matching pillars — a pre-sprint, same-browser-history heuristic, not a trained prediction (`DECISIONS.md` #38).
 
-**Persona portal & deep-linking** — [`portal.html`](https://pribalky.github.io/dor-gatekeeper/portal.html) routes 3 personas (Squad Engineer/BA, Tech Lead/Architect, CXO/Board) straight into a populated, relevant view of this app or `dor-recovery-console`, via `?sample=&framework=#tab=` deep-link params (`js/engine/deepLink.js`, `DECISIONS.md` #35).
+**Persona portal & deep-linking** — [`portal.html`](https://pribalky.github.io/dor-gatekeeper/portal.html) routes 3 personas (Squad Engineer/BA, Tech Lead/Architect, CXO/Board) straight into a populated, relevant view of this app or `dor-recovery-console`, via `?sample=&framework=#tab=` deep-link params (`js/engine/deepLink.js`, `DECISIONS.md` #35). The portal also carries a **Problem → Solution Navigator** — a table of director-level concerns mapped to exactly where each is solved, with a direct deep-link — built entirely from `js/config/concernNavigatorMap.js` and the same deep-link mechanism, so it's a product-completeness reference rather than a 4th persona card (`DECISIONS.md` #49).
 
 **CI integration**
 - `.github/actions/dor-gate-check` — a composite Action that runs the exported Rego policy via `opa eval --fail-defined` against a dor-gatekeeper JSON export, failing the step on any denial:
