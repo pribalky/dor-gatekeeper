@@ -430,3 +430,13 @@ Fonts are shipped as real `.ttf` files under `assets/fonts/` (own copy per repo,
 **Why:** Requested directly — the feature is easy to overlook if a first-time visitor has to write their own ticket text to see it do anything. Pre-filling and rendering suggestions is non-destructive (identical to what "Suggest Answers" already does on click, just triggered automatically on sample load) — nothing is written to `state.answers` until a human clicks Apply, so this doesn't weaken the existing advisory-only discipline (#39) at all.
 
 **Trade-off:** One more file to keep in sync if a sample's checklist items change meaningfully — mitigated by the new test failing loudly on a missing entry, though it can't detect a demo text that's gone stale in content (still present, just no longer matching anything useful).
+
+---
+
+## 42. Fix: Escalation Likelihood badge didn't actually hide — author CSS was overriding the `hidden` attribute
+
+**Decision:** `.escalation-badge { display: block; ... }` (#38) unconditionally set `display: block`. Author stylesheets always outrank the browser's default `[hidden] { display: none }` UA rule regardless of selector specificity — so setting `els.escalationBadge.hidden = true` (e.g. on Reset, or whenever `deriveEscalationLikelihood` returns `null`) correctly set the attribute but had no visual effect: the badge stayed on screen showing stale text from the last time it *did* have a result. Added `.escalation-badge[hidden] { display: none; }`, matching the pattern `.tab-panel[hidden]` already uses correctly elsewhere in this stylesheet.
+
+**Why:** Reported directly — a stale "Escalation Likelihood: Elevated" banner stayed visible after Reset when arriving via the portal's BA persona card (which loads a sample with real cross-app `dor:reworkSignals` history). Reproduced with a headless-browser check of `getComputedStyle(...).display` before/after the CSS fix (`block` → `none`) and `Playwright.isVisible()` (`true` → `false`), not just the DOM attribute, since the attribute was never actually the broken part.
+
+**Trade-off:** None — this is a straightforward correctness fix. Worth noting as a pattern to watch for: any future toggled-via-`hidden` element must not set `display` unconditionally in its own class rule without a matching `[hidden]` override, or it silently repeats this bug.

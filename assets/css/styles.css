@@ -403,6 +403,14 @@ button.secondary {
   cursor: help;
 }
 
+/* `display: block` above is author CSS, which always outranks the browser's
+   default `[hidden] { display: none }` UA rule regardless of selector
+   specificity — without this override, setting the `hidden` attribute (e.g. on
+   Reset) had no visual effect and the badge stayed on screen with stale text. */
+.escalation-badge[hidden] {
+  display: none;
+}
+
 .escalation-badge.escalation-elevated { color: var(--color-blocked); border-color: var(--color-blocked); }
 
 .overall-score {
