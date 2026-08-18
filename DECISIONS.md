@@ -515,12 +515,24 @@ Fonts are shipped as real `.ttf` files under `assets/fonts/` (own copy per repo,
 
 ---
 
-## 50. Persistent "Strategy-to-Execution Control Plane" link in the aside (shared with `dor-recovery-console` #17)
+## 50. Persistent "Strategy-to-Execution Control Plane" link in the aside (shared with `dor-recovery-console` #44)
 
 **Decision:** Added a plain `<a href="portal.html" class="secondary">Strategy-to-Execution Control Plane →</a>` as the last item in the aside's `.export-buttons` block, alongside the export buttons. `.export-buttons a` gained its own CSS rule mirroring the existing `button`/`button.secondary` box model (padding, border, radius, font), since no anchor styling previously existed there. Plain static navigation, not a JS-wired button — there's nothing to compute, so no click handler.
 
-**Why:** Confirmed via direct read of `index.html` that the aside never linked to `portal.html` at all before this — the portal was only discoverable if you already knew to start there. `dor-recovery-console` has the identical gap and gets the identical fix (its own `DECISIONS.md` #17, absolute-linked since it's a separate deployment) — this is a shared, cross-referenced decision like #1-#10. Verified via headless browser: the link renders in the aside with the correct text and `portal.html` href, `getComputedStyle(...).display` confirms it renders as a block-level button-styled element (not an unstyled inline link), and clicking it correctly navigates to the portal. Zero console errors.
+**Why:** Confirmed via direct read of `index.html` that the aside never linked to `portal.html` at all before this — the portal was only discoverable if you already knew to start there. `dor-recovery-console` has the identical gap and gets the identical fix (its own `DECISIONS.md` #44, absolute-linked since it's a separate deployment) — this is a shared, cross-referenced decision like #1-#10. Verified via headless browser: the link renders in the aside with the correct text and `portal.html` href, `getComputedStyle(...).display` confirms it renders as a block-level button-styled element (not an unstyled inline link), and clicking it correctly navigates to the portal. Zero console errors.
 
 387 tests passing (unchanged — a static link needs no new test).
 
 **Trade-off:** None — this is additive, static navigation with no behavior to regress.
+
+---
+
+## 51. Fix: a disabled `button.secondary` didn't actually look disabled — `.secondary` and `:disabled` tie on specificity
+
+**Decision:** `button:disabled { background: var(--color-surface-2); ...}` (this file's existing rule) and `button.secondary { background: transparent; ...}` have equal CSS specificity (0,1,1 each) — with `button.secondary` declared later in the stylesheet, it won the cascade tie for any button that was both `.secondary` and `disabled`, silently keeping the enabled-looking transparent background. Added `button.secondary:disabled { background: var(--color-surface-2); border-color: var(--color-border); color: var(--color-text-muted); }` immediately after `button.secondary` to break the tie explicitly.
+
+**Why:** Found while fixing the equivalent bug in `dor-recovery-console` (its own `DECISIONS.md` #45) — that app had copied this exact `button`/`button:disabled`/`button.secondary` CSS block from this repo, and the same specificity gap existed here too, already live: `#export-baseline-btn` (`class="secondary" disabled`) is disabled by default on every fresh page load and looked fully clickable. Verified via headless browser: `#export-baseline-btn`'s computed `background-color` on a cold page load is now `rgb(239, 232, 217)` (the muted disabled color), not the previous transparent.
+
+387 tests passing (unchanged — CSS-only fix, verified via computed style in a headless browser rather than the Node test suite).
+
+**Trade-off:** None — pure correctness fix.

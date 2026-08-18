@@ -188,6 +188,15 @@ button.secondary {
   border-color: var(--color-border-strong);
 }
 
+/* .secondary and :disabled have equal specificity — without this, a disabled
+   secondary button (e.g. "Export Gatekeeper Baseline" before export is ready)
+   keeps .secondary's enabled-looking transparent background. */
+button.secondary:disabled {
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
 .errors-region {
   max-width: 1280px;
   margin: 0 auto;
